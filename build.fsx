@@ -396,6 +396,5 @@ Target "HelpDocs" <| fun _ ->
 Target "All" DoNothing
 "BuildRelease" ==> "All"
 "RunTests" ==> "All"
-"Nuget" ==> "All"
 
 RunTargetOrDefault "Help"
