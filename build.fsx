@@ -7,8 +7,6 @@ open System.IO
 open System.Text
 open Fake
 open Fake.FileUtils
-open Fake.MSTest
-open Fake.NUnitCommon
 open Fake.TaskRunnerHelper
 open Fake.ProcessHelper
 
@@ -26,9 +24,6 @@ let company = "Akka.NET Team"
 let description = "Akka.NET is a port of the popular Java/Scala framework Akka to .NET"
 let tags = ["akka";"actors";"actor";"model";"Akka";"concurrency"]
 let configuration = "Release"
-let toolDir = "tools"
-let CloudCopyDir = toolDir @@ "CloudCopy"
-let AzCopyDir = toolDir @@ "AzCopy"
 
 // Read release notes and version
 
@@ -57,11 +52,11 @@ let nugetDir = binDir @@ "nuget"
 let workingDir = binDir @@ "build"
 let libDir = workingDir @@ @"lib\net45\"
 let nugetExe = FullName @"src\.nuget\NuGet.exe"
-let docDir = "bin" @@ "doc"
+let slnFile = "./src/Akka.Persistence.PostgreSql.sln"
 
 open Fake.RestorePackageHelper
 Target "RestorePackages" (fun _ -> 
-     "./src/Akka.sln"
+     slnFile
      |> RestoreMSSolutionPackages (fun p ->
          { p with
              OutputPath = "./src/packages"
@@ -87,80 +82,16 @@ Target "AssemblyInfo" <| fun _ ->
         Attribute.Version version
         Attribute.FileVersion version ] <| AssemblyInfoFileConfig(false)
 
-    for file in !! "src/**/AssemblyInfo.fs" do
-        let title =
-            file
-            |> Path.GetDirectoryName
-            |> Path.GetDirectoryName
-            |> Path.GetFileName
-
-        CreateFSharpAssemblyInfo file [ 
-            Attribute.Title title
-            Attribute.Product product
-            Attribute.Description description
-            Attribute.Copyright copyright
-            Attribute.Company company
-            Attribute.ComVisible false
-            Attribute.CLSCompliant true
-            Attribute.Version version
-            Attribute.FileVersion version ]
-
 
 //--------------------------------------------------------------------------------
 // Build the solution
 
 Target "Build" <| fun _ ->
 
-    !!"src/Akka.sln"
+    !! slnFile
     |> MSBuildRelease "" "Rebuild"
     |> ignore
 
-Target "BuildMono" <| fun _ ->
-
-    !!"src/Akka.sln"
-    |> MSBuild "" "Rebuild" [("Configuration","Release Mono")]
-    |> ignore
-
-//--------------------------------------------------------------------------------
-// Build the docs
-Target "Docs" <| fun _ ->
-    !! "documentation/akkadoc.shfbproj"
-    |> MSBuildRelease "" "Rebuild"
-    |> ignore
-
-//--------------------------------------------------------------------------------
-// Push DOCs content to Windows Azure blob storage
-Target "AzureDocsDeploy" (fun _ ->
-    let rec pushToAzure docDir azureUrl container azureKey trialsLeft =
-        let tracing = enableProcessTracing
-        enableProcessTracing <- false
-        let arguments = sprintf "/Source:%s /Dest:%s /DestKey:%s /S /Y /SetContentType" (Path.GetFullPath docDir) (azureUrl @@ container) azureKey
-        tracefn "Pushing docs to %s. Attempts left: %d" (azureUrl) trialsLeft
-        try 
-            
-            let result = ExecProcess(fun info ->
-                info.FileName <- AzCopyDir @@ "AzCopy.exe"
-                info.Arguments <- arguments) (TimeSpan.FromMinutes 120.0) //takes a very long time to upload
-            if result <> 0 then failwithf "Error during AzCopy.exe upload to azure."
-        with exn -> 
-            if (trialsLeft > 0) then (pushToAzure docDir azureUrl container azureKey (trialsLeft-1))
-            else raise exn
-    let canPush = hasBuildParam "azureKey" && hasBuildParam "azureUrl"
-    if (canPush) then
-         printfn "Uploading API docs to Azure..."
-         let azureUrl = getBuildParam "azureUrl"
-         let azureKey = (getBuildParam "azureKey") + "==" //hack, because it looks like FAKE arg parsing chops off the "==" that gets tacked onto the end of each Azure storage key
-         if(isUnstableDocs) then
-            pushToAzure docDir azureUrl "unstable" azureKey 3
-         if(not isUnstableDocs) then
-            pushToAzure docDir azureUrl "stable" azureKey 3
-            pushToAzure docDir azureUrl release.NugetVersion azureKey 3
-    if(not canPush) then
-        printfn "Missing required paraments to push docs to Azure. Run build HelpDocs to find out!"
-            
-)
-
-Target "PublishDocs" DoNothing
 
 //--------------------------------------------------------------------------------
 // Copy the build output to bin directory
@@ -172,26 +103,7 @@ Target "CopyOutput" <| fun _ ->
         let src = "src" @@ project @@ @"bin/Release/"
         let dst = binDir @@ project
         CopyDir dst src allFiles
-    [ "core/Akka"
-      "core/Akka.FSharp"
-      "core/Akka.TestKit"
-      "core/Akka.Remote"
-      "core/Akka.Remote.TestKit"
-      "core/Akka.Cluster"
-      "core/Akka.MultiNodeTestRunner"
-      "core/Akka.Persistence"
-      "core/Akka.Persistence.FSharp"
-      "core/Akka.Persistence.TestKit"
-      "contrib/loggers/Akka.Logger.slf4net"
-      "contrib/loggers/Akka.Logger.NLog" 
-      "contrib/loggers/Akka.Logger.Serilog" 
-      "contrib/dependencyinjection/Akka.DI.Core"
-      "contrib/dependencyinjection/Akka.DI.AutoFac"
-      "contrib/dependencyinjection/Akka.DI.CastleWindsor"
-      "contrib/dependencyinjection/Akka.DI.Ninject"
-      "contrib/testkits/Akka.TestKit.Xunit" 
-      "contrib/testkits/Akka.TestKit.NUnit" 
-      "contrib/testkits/Akka.TestKit.Xunit2" 
+    [ "Akka.Persistence.PostgreSql"
       ]
     |> List.iter copyOutput
 
@@ -213,32 +125,7 @@ Target "CleanTests" <| fun _ ->
 
 open XUnit2Helper
 Target "RunTests" <| fun _ ->  
-    let msTestAssemblies = !! "src/**/bin/Release/Akka.TestKit.VsTest.Tests.dll"
-    let nunitTestAssemblies = !! "src/**/bin/Release/Akka.TestKit.NUnit.Tests.dll"
-    let xunitTestAssemblies = !! "src/**/bin/Release/*.Tests.dll" -- 
-                                    "src/**/bin/Release/Akka.TestKit.VsTest.Tests.dll" -- 
-                                    "src/**/bin/Release/Akka.TestKit.NUnit.Tests.dll" --
-                                    "src/**/bin/Release/Akka.Persistence.SqlServer.Tests.dll" --
-                                    "src/**/bin/Release/Akka.Persistence.PostgreSql.Tests.dll" --
-                                    "src/**/bin/Release/Akka.Persistence.Cassandra.Tests.dll"
-
-    mkdir testOutput
-
-    MSTest (fun p -> p) msTestAssemblies
-    nunitTestAssemblies
-    |> NUnit (fun p -> 
-        {p with
-            DisableShadowCopy = true; 
-            OutputFile = testOutput + @"\NUnitTestResults.xml"})
-
-    let xunitToolPath = findToolInSubPath "xunit.console.exe" "src/packages/xunit.runner.console*/tools"
-    printfn "Using XUnit runner: %s" xunitToolPath
-    xUnit2
-        (fun p -> { p with OutputDir = testOutput; ToolPath = xunitToolPath })
-        xunitTestAssemblies
-
-Target "RunTestsMono" <| fun _ ->  
-    let xunitTestAssemblies = !! "src/**/bin/Release Mono/*.Tests.dll"
+    let xunitTestAssemblies = !! "src/**/bin/Release/*.Tests.dll" 
 
     mkdir testOutput
 
@@ -247,48 +134,6 @@ Target "RunTestsMono" <| fun _ ->
     xUnit2
         (fun p -> { p with OutputDir = testOutput; ToolPath = xunitToolPath })
         xunitTestAssemblies
-
-Target "MultiNodeTests" <| fun _ ->
-    let multiNodeTestPath = findToolInSubPath "Akka.MultiNodeTestRunner.exe" "bin/core/Akka.MultiNodeTestRunner*"
-    printfn "Using MultiNodeTestRunner: %s" multiNodeTestPath
-
-    let spec = getBuildParam "spec"
-
-    let args = new StringBuilder()
-                |> append "Akka.MultiNodeTests.dll"
-                |> append "-Dmultinode.enable-filesink=on"
-                |> appendIfNotNullOrEmpty spec "-Dmultinode.test-spec="
-                |> toText
-
-    let result = ExecProcess(fun info -> 
-        info.FileName <- multiNodeTestPath
-        info.WorkingDirectory <- (Path.GetDirectoryName (FullName multiNodeTestPath))
-        info.Arguments <- args) (System.TimeSpan.FromMinutes 60.0) (* This is a VERY long running task. *)
-    if result <> 0 then failwithf "MultiNodeTestRunner failed. %s %s" multiNodeTestPath args
-
-Target "RunSqlServerTests" <| fun _ ->
-    let sqlServerTests = !! "src/**/bin/Release/Akka.Persistence.SqlServer.Tests.dll"
-    let xunitToolPath = findToolInSubPath "xunit.console.exe" "src/packages/xunit.runner.console*/tools"
-    printfn "Using XUnit runner: %s" xunitToolPath
-    xUnit
-        (fun p -> { p with OutputDir = testOutput; ToolPath = xunitToolPath })
-        sqlServerTests
-
-Target "RunPostgreSqlTests" <| fun _ ->
-    let postgreSqlTests = !! "src/**/bin/Release/Akka.Persistence.PostgreSql.Tests.dll"
-    let xunitToolPath = findToolInSubPath "xunit.console.exe" "src/packages/xunit.runner.console*/tools"
-    printfn "Using XUnit runner: %s" xunitToolPath
-    xUnit2
-        (fun p -> { p with OutputDir = testOutput; ToolPath = xunitToolPath })
-        postgreSqlTests
-
-Target "RunCassandraTests" <| fun _ ->
-    let cassandraTests = !! "src/**/bin/Release/Akka.Persistence.Cassandra.Tests.dll"
-    let xunitToolPath = findToolInSubPath "xunit.console.exe" "src/packages/xunit.runner.console*/tools"
-    printfn "Using XUnit runner: %s" xunitToolPath
-    xUnit2
-        (fun p -> { p with OutputDir = testOutput; ToolPath = xunitToolPath })
-        cassandraTests
 
 //--------------------------------------------------------------------------------
 // Nuget targets 
@@ -298,15 +143,9 @@ module Nuget =
     // add Akka dependency for other projects
     let getAkkaDependency project =
         match project with
-        | "Akka" -> []
-        | "Akka.Cluster" -> ["Akka.Remote", release.NugetVersion]
-        | persistence when (persistence.Contains("Sql") && not (persistence.Equals("Akka.Persistence.Sql.Common"))) -> ["Akka.Persistence.Sql.Common", preReleaseVersion]
-        | persistence when (persistence.StartsWith("Akka.Persistence.")) -> ["Akka.Persistence", preReleaseVersion]
-        | di when (di.StartsWith("Akka.DI.") && not (di.EndsWith("Core"))) -> ["Akka.DI.Core", release.NugetVersion]
-        | testkit when testkit.StartsWith("Akka.TestKit.") -> ["Akka.TestKit", release.NugetVersion]
-        | _ -> ["Akka", release.NugetVersion]
+        | _ -> []
 
-    // used to add -pre suffix to pre-release packages
+     // used to add -pre suffix to pre-release packages
     let getProjectVersion project =
       match project with
       | "Akka.Cluster" -> preReleaseVersion
@@ -554,22 +393,9 @@ Target "HelpDocs" <| fun _ ->
 "CleanNuget" ==> "CreateNuget"
 "CleanNuget" ==> "BuildRelease" ==> "Nuget"
 
-//docs dependencies
-"BuildRelease" ==> "Docs" ==> "AzureDocsDeploy" ==> "PublishDocs"
-
 Target "All" DoNothing
 "BuildRelease" ==> "All"
 "RunTests" ==> "All"
-"MultiNodeTests" ==> "All"
 "Nuget" ==> "All"
-
-Target "AllTests" DoNothing //used for Mono builds, due to Mono 4.0 bug with FAKE / NuGet https://github.com/fsharp/fsharp/issues/427
-"BuildRelease" ==> "AllTests"
-"RunTests" ==> "AllTests"
-"MultiNodeTests" ==> "AllTests"
-
-"BuildRelease" ==> "RunSqlServerTests"
-"BuildRelease" ==> "RunPostgreSqlTests"
-"BuildRelease" ==> "RunCassandraTests"
 
 RunTargetOrDefault "Help"
