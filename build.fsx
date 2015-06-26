@@ -229,8 +229,7 @@ let createNugetPackages _ =
         // Create both normal nuget package and symbols nuget package. 
         // Uses the files we copied to workingDir and outputs to nugetdir
         pack nugetDir NugetSymbolPackage.Nuspec
-        
-        removeDir workingDir
+
 
 let publishNugetPackages _ = 
     let rec publishPackage url accessKey trialsLeft packageFile =
@@ -396,5 +395,6 @@ Target "HelpDocs" <| fun _ ->
 Target "All" DoNothing
 "BuildRelease" ==> "All"
 "RunTests" ==> "All"
+"Nuget" ==> "All"
 
 RunTargetOrDefault "Help"
