@@ -41,6 +41,10 @@
     <Reference Include="Akka.Persistence">
       <HintPath>..\packages\Akka.Persistence.1.0.3.0-beta\lib\net45\Akka.Persistence.dll</HintPath>
     </Reference>
+    <Reference Include="Akka.Persistence.Sql.Common, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Akka.Persistence.Sql.Common.1.0.3.0-beta\lib\net45\Akka.Persistence.Sql.Common.dll</HintPath>
+    </Reference>
     <Reference Include="Akka.Persistence.TestKit">
       <HintPath>..\packages\Akka.Persistence.TestKit.1.0.3.0-beta\lib\net45\Akka.Persistence.TestKit.dll</HintPath>
     </Reference>
