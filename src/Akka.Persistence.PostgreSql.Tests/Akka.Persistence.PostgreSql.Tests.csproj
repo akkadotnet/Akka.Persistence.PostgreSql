@@ -36,23 +36,22 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Akka">
-      <HintPath>..\packages\Akka.1.0.3\lib\net45\Akka.dll</HintPath>
+      <HintPath>..\Packages\Akka.1.0.4\lib\net45\Akka.dll</HintPath>
     </Reference>
     <Reference Include="Akka.Persistence">
-      <HintPath>..\packages\Akka.Persistence.1.0.3.0-beta\lib\net45\Akka.Persistence.dll</HintPath>
+      <HintPath>..\Packages\Akka.Persistence.1.0.4.12-beta\lib\net45\Akka.Persistence.dll</HintPath>
     </Reference>
-    <Reference Include="Akka.Persistence.Sql.Common, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Akka.Persistence.Sql.Common.1.0.3.0-beta\lib\net45\Akka.Persistence.Sql.Common.dll</HintPath>
+    <Reference Include="Akka.Persistence.Sql.Common">
+      <HintPath>..\Packages\Akka.Persistence.Sql.Common.1.0.4.12-beta\lib\net45\Akka.Persistence.Sql.Common.dll</HintPath>
     </Reference>
     <Reference Include="Akka.Persistence.TestKit">
-      <HintPath>..\packages\Akka.Persistence.TestKit.1.0.3.0-beta\lib\net45\Akka.Persistence.TestKit.dll</HintPath>
+      <HintPath>..\Packages\Akka.Persistence.TestKit.1.0.4.12-beta\lib\net45\Akka.Persistence.TestKit.dll</HintPath>
     </Reference>
     <Reference Include="Akka.TestKit">
-      <HintPath>..\packages\Akka.TestKit.1.0.3\lib\net45\Akka.TestKit.dll</HintPath>
+      <HintPath>..\Packages\Akka.TestKit.1.0.4\lib\net45\Akka.TestKit.dll</HintPath>
     </Reference>
     <Reference Include="Akka.TestKit.Xunit2">
-      <HintPath>..\packages\Akka.TestKit.Xunit2.1.0.3\lib\net45\Akka.TestKit.Xunit2.dll</HintPath>
+      <HintPath>..\Packages\Akka.TestKit.Xunit2.1.0.4\lib\net45\Akka.TestKit.Xunit2.dll</HintPath>
     </Reference>
     <Reference Include="Google.ProtocolBuffers">
       <HintPath>..\packages\Google.ProtocolBuffers.2.4.1.521\lib\net40\Google.ProtocolBuffers.dll</HintPath>
@@ -63,9 +62,8 @@
     <Reference Include="Mono.Security">
       <HintPath>..\packages\Npgsql.2.2.5\lib\net45\Mono.Security.dll</HintPath>
     </Reference>
-    <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Newtonsoft.Json.6.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\Packages\Newtonsoft.Json.7.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="Npgsql">
       <HintPath>..\packages\Npgsql.2.2.5\lib\net45\Npgsql.dll</HintPath>
