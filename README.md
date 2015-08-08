@@ -1,4 +1,4 @@
-﻿## Akka.Persistence.PostgreSql
+## Akka.Persistence.PostgreSql
 
 Akka Persistence journal and snapshot store backed by PostgreSql database.
 
@@ -77,7 +77,7 @@ akka.persistence.journal.postgresql.class = "MyModule.MyCustomPostgreSqlJournal,
 
 ### Tests
 
-The PostgreSql tests are packaged as a separate build task with a target of "RunPostgreSqlTests".
+The PostgreSql tests are packaged and run as part of the default "All" build task.
 
 In order to run the tests, you must do the following things:
 
