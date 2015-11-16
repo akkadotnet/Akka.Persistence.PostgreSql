@@ -16,8 +16,8 @@ akka.persistence.journal.postgresql.connection-string = "<database connection st
 Similar configuration may be used to setup a PostgreSql snapshot store:
 
 ```
-akka.persistence.snasphot-store.plugin = "akka.persistence.snasphot-store.postgresql"
-akka.persistence.snasphot-store.postgresql.connection-string = "<database connection string>"
+akka.persistence.snapshot-store.plugin = "akka.persistence.snapshot-store.postgresql"
+akka.persistence.snapshot-store.postgresql.connection-string = "<database connection string>"
 ```
 
 Remember that connection string must be provided separately to Journal and Snapshot Store. To finish setup simply initialize plugin using: `PostgreSqlPersistence.Init(actorSystem);`
