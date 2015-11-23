@@ -14,7 +14,8 @@ namespace Akka.Persistence.PostgreSql
                     persistence_id VARCHAR(200) NOT NULL,
                     sequence_nr BIGINT NOT NULL,
                     is_deleted BOOLEAN NOT NULL,
-                    payload_type VARCHAR(500) NOT NULL,
+                    manifest VARCHAR(500) NOT NULL,
+                    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
                     payload BYTEA NOT NULL,
                     CONSTRAINT {3}_pk PRIMARY KEY (persistence_id, sequence_nr)
                 );
@@ -34,7 +35,7 @@ namespace Akka.Persistence.PostgreSql
                     sequence_nr BIGINT NOT NULL,
                     created_at TIMESTAMP WITH TIME ZONE NOT NULL,
                     created_at_ticks SMALLINT NOT NULL CHECK(created_at_ticks >= 0 AND created_at_ticks < 10),
-                    snapshot_type VARCHAR(500) NOT NULL,
+                    manifest VARCHAR(500) NOT NULL,
                     snapshot BYTEA NOT NULL,
                     CONSTRAINT {3}_pk PRIMARY KEY (persistence_id, sequence_nr)
                 );

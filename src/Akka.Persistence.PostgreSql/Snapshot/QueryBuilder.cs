@@ -15,11 +15,13 @@ namespace Akka.Persistence.PostgreSql.Snapshot
         private readonly string _insertSql;
         private readonly string _selectSql;
 
-        public PostgreSqlSnapshotQueryBuilder(string schemaName, string tableName)
+        public PostgreSqlSnapshotQueryBuilder(PostgreSqlSnapshotStoreSettings settings)
         {
+            var tableName = settings.TableName;
+            var schemaName = settings.SchemaName;
             _deleteSql = @"DELETE FROM {0}.{1} WHERE persistence_id = :persistence_id ".QuoteSchemaAndTable(schemaName, tableName);
-            _insertSql = @"INSERT INTO {0}.{1} (persistence_id, sequence_nr, created_at, created_at_ticks, snapshot_type, snapshot) VALUES (:persistence_id, :sequence_nr, :created_at, :created_at_ticks, :snapshot_type, :snapshot)".QuoteSchemaAndTable(schemaName, tableName);
-            _selectSql = @"SELECT persistence_id, sequence_nr, created_at, created_at_ticks, snapshot_type, snapshot FROM {0}.{1} WHERE persistence_id = :persistence_id".QuoteSchemaAndTable(schemaName, tableName);
+            _insertSql = @"INSERT INTO {0}.{1} (persistence_id, sequence_nr, created_at, created_at_ticks, manifest, snapshot) VALUES (:persistence_id, :sequence_nr, :created_at, :created_at_ticks, :manifest, :snapshot)".QuoteSchemaAndTable(schemaName, tableName);
+            _selectSql = @"SELECT persistence_id, sequence_nr, created_at, created_at_ticks, manifest, snapshot FROM {0}.{1} WHERE persistence_id = :persistence_id".QuoteSchemaAndTable(schemaName, tableName);
         }
 
         public DbCommand DeleteOne(string persistenceId, long sequenceNr, DateTime timestamp)
@@ -102,7 +104,7 @@ namespace Akka.Persistence.PostgreSql.Snapshot
                     new NpgsqlParameter(":sequence_nr", NpgsqlDbType.Bigint) { Value = entry.SequenceNr },
                     new NpgsqlParameter(":created_at", NpgsqlDbType.Timestamp) { Value = GetMaxPrecisionTicks(entry.Timestamp) },
                     new NpgsqlParameter(":created_at_ticks", NpgsqlDbType.Smallint) { Value = GetExtraTicks(entry.Timestamp) },
-                    new NpgsqlParameter(":snapshot_type", NpgsqlDbType.Varchar, entry.SnapshotType.Length) { Value = entry.SnapshotType },
+                    new NpgsqlParameter(":manifest", NpgsqlDbType.Varchar, entry.SnapshotType.Length) { Value = entry.SnapshotType },
                     new NpgsqlParameter(":snapshot", NpgsqlDbType.Bytea, entry.Snapshot.Length) { Value = entry.Snapshot }
                 }
             };

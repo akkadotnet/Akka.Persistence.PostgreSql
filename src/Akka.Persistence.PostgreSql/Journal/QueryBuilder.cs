@@ -1,10 +1,14 @@
-﻿using System.Data;
+﻿using System;
+using System.Collections.Generic;
+using System.Data;
 using System.Data.SqlClient;
 using System.Text;
 using Npgsql;
 using NpgsqlTypes;
 using Akka.Persistence.Sql.Common.Journal;
 using System.Data.Common;
+using System.Linq;
+using Akka.Persistence.Sql.Common.Queries;
 
 namespace Akka.Persistence.PostgreSql.Journal
 {
@@ -21,9 +25,73 @@ namespace Akka.Persistence.PostgreSql.Journal
             _tableName = tableName;
             _schemaName = schemaName;
 
-            _insertMessagesSql = "INSERT INTO {0}.{1} (persistence_id, sequence_nr, is_deleted, payload_type, payload) VALUES (:persistence_id, :sequence_nr, :is_deleted, :payload_type, :payload)"
+            _insertMessagesSql = "INSERT INTO {0}.{1} (persistence_id, sequence_nr, is_deleted, manifest, created_at, payload) VALUES (:persistence_id, :sequence_nr, :is_deleted, :manifest, :created_at, :payload)"
                 .QuoteSchemaAndTable(_schemaName, _tableName);
             _selectHighestSequenceNrSql = @"SELECT MAX(sequence_nr) FROM {0}.{1} WHERE persistence_id = :persistence_id".QuoteSchemaAndTable(_schemaName, _tableName);
+        }
+
+        public DbCommand SelectEvents(IEnumerable<IHint> hints)
+        {
+            var sqlCommand = new SqlCommand();
+
+            var sqlized = hints
+                .Select(h => HintToSql(h, sqlCommand))
+                .Where(x => !string.IsNullOrEmpty(x));
+
+            var where = string.Join(" AND ", sqlized);
+            var sql = new StringBuilder("SELECT persistence_id, sequence_nr, is_deleted, manifest, created_at, payload FROM {0}.{1} ".QuoteSchemaAndTable(_schemaName, _tableName));
+            if (!string.IsNullOrEmpty(where))
+            {
+                sql.Append(" WHERE ").Append(where);
+            }
+
+            sqlCommand.CommandText = sql.ToString();
+            return sqlCommand;
+        }
+
+        private string HintToSql(IHint hint, SqlCommand command)
+        {
+            if (hint is TimestampRange)
+            {
+                var range = (TimestampRange)hint;
+                var sb = new StringBuilder();
+
+                if (range.From.HasValue)
+                {
+                    sb.Append(" created_at >= :TimestampFrom ");
+                    command.Parameters.AddWithValue("@TimestampFrom", range.From.Value);
+                }
+                if (range.From.HasValue && range.To.HasValue) sb.Append("AND");
+                if (range.To.HasValue)
+                {
+                    sb.Append(" created_at < :TimestampTo ");
+                    command.Parameters.AddWithValue("@TimestampTo", range.To.Value);
+                }
+
+                return sb.ToString();
+            }
+            if (hint is PersistenceIdRange)
+            {
+                var range = (PersistenceIdRange)hint;
+                var sb = new StringBuilder(" PersistenceID IN (");
+                var i = 0;
+                foreach (var persistenceId in range.PersistenceIds)
+                {
+                    var paramName = ":Pid" + (i++);
+                    sb.Append(paramName).Append(',');
+                    command.Parameters.AddWithValue(paramName, persistenceId);
+                }
+                return range.PersistenceIds.Count == 0
+                    ? string.Empty
+                    : sb.Remove(sb.Length - 1, 1).Append(')').ToString();
+            }
+            else if (hint is WithManifest)
+            {
+                var manifest = (WithManifest)hint;
+                command.Parameters.AddWithValue(":Manifest", manifest.Manifest);
+                return " manifest = :Manifest";
+            }
+            else throw new NotSupportedException(string.Format("PostgreSql journal doesn't support query with hint [{0}]", hint.GetType()));
         }
 
         public DbCommand SelectMessages(string persistenceId, long fromSequenceNr, long toSequenceNr, long max)
@@ -53,7 +121,8 @@ namespace Akka.Persistence.PostgreSql.Journal
             command.Parameters.Add(":persistence_id", NpgsqlDbType.Varchar);
             command.Parameters.Add(":sequence_nr", NpgsqlDbType.Bigint);
             command.Parameters.Add(":is_deleted", NpgsqlDbType.Boolean);
-            command.Parameters.Add(":payload_type", NpgsqlDbType.Varchar);
+            command.Parameters.Add(":created_at", NpgsqlDbType.Timestamp);
+            command.Parameters.Add(":manifest", NpgsqlDbType.Varchar);
             command.Parameters.Add(":payload", NpgsqlDbType.Bytea);
 
             return command;
@@ -102,7 +171,8 @@ namespace Akka.Persistence.PostgreSql.Journal
                     persistence_id,
                     sequence_nr,
                     is_deleted,
-                    payload_type,
+                    manifest,
+                    created_at,
                     payload ")
                 .Append(" FROM {0}.{1} WHERE persistence_id = :persistence_id".QuoteSchemaAndTable(_schemaName, _tableName));
 
