@@ -46,8 +46,22 @@ namespace Akka.Persistence.PostgreSql
     /// <summary>
     /// An actor system extension initializing support for PostgreSql persistence layer.
     /// </summary>
-    public class PostgreSqlPersistenceExtension : IExtension
+    public class PostgreSqlPersistence : IExtension
     {
+        /// <summary>
+        /// Returns a default configuration for akka persistence SQLite-based journals and snapshot stores.
+        /// </summary>
+        /// <returns></returns>
+        public static Config DefaultConfiguration()
+        {
+            return ConfigurationFactory.FromResource<PostgreSqlPersistence>("Akka.Persistence.PostgreSql.postgresql.conf");
+        }
+
+        public static PostgreSqlPersistence Get(ActorSystem system)
+        {
+            return system.WithExtension<PostgreSqlPersistence, PostgreSqlPersistenceProvider>();
+        }
+
         /// <summary>
         /// Journal-related settings loaded from HOCON configuration.
         /// </summary>
@@ -56,23 +70,23 @@ namespace Akka.Persistence.PostgreSql
         /// <summary>
         /// Snapshot store related settings loaded from HOCON configuration.
         /// </summary>
-        public readonly PostgreSqlSnapshotStoreSettings SnapshotStoreSettings;
+        public readonly PostgreSqlSnapshotStoreSettings SnapshotSettings;
 
-        public PostgreSqlPersistenceExtension(ExtendedActorSystem system)
+        public PostgreSqlPersistence(ExtendedActorSystem system)
         {
-            system.Settings.InjectTopLevelFallback(PostgreSqlPersistence.DefaultConfiguration());
+            system.Settings.InjectTopLevelFallback(DefaultConfiguration());
 
             JournalSettings = new PostgreSqlJournalSettings(system.Settings.Config.GetConfig(PostgreSqlJournalSettings.JournalConfigPath));
-            SnapshotStoreSettings = new PostgreSqlSnapshotStoreSettings(system.Settings.Config.GetConfig(PostgreSqlSnapshotStoreSettings.SnapshotStoreConfigPath));
+            SnapshotSettings = new PostgreSqlSnapshotStoreSettings(system.Settings.Config.GetConfig(PostgreSqlSnapshotStoreSettings.SnapshotStoreConfigPath));
 
             if (JournalSettings.AutoInitialize)
             {
                 PostgreSqlInitializer.CreatePostgreSqlJournalTables(JournalSettings.ConnectionString, JournalSettings.SchemaName, JournalSettings.TableName);
             }
 
-            if (SnapshotStoreSettings.AutoInitialize)
+            if (SnapshotSettings.AutoInitialize)
             {
-                PostgreSqlInitializer.CreatePostgreSqlSnapshotStoreTables(SnapshotStoreSettings.ConnectionString, SnapshotStoreSettings.SchemaName, SnapshotStoreSettings.TableName);
+                PostgreSqlInitializer.CreatePostgreSqlSnapshotStoreTables(SnapshotSettings.ConnectionString, SnapshotSettings.SchemaName, SnapshotSettings.TableName);
             }
         }
     }
@@ -80,37 +94,17 @@ namespace Akka.Persistence.PostgreSql
     /// <summary>
     /// Singleton class used to setup PostgreSQL backend for akka persistence plugin.
     /// </summary>
-    public class PostgreSqlPersistence : ExtensionIdProvider<PostgreSqlPersistenceExtension>
+    public class PostgreSqlPersistenceProvider : ExtensionIdProvider<PostgreSqlPersistence>
     {
-        public static readonly PostgreSqlPersistence Instance = new PostgreSqlPersistence();
-
-        /// <summary>
-        /// Initializes a PostgreSQL persistence plugin inside provided <paramref name="actorSystem"/>.
-        /// </summary>
-        public static void Init(ActorSystem actorSystem)
-        {
-            Instance.Apply(actorSystem);
-        }
-
-        private PostgreSqlPersistence() { }
         
         /// <summary>
         /// Creates an actor system extension for akka persistence PostgreSQL support.
         /// </summary>
         /// <param name="system"></param>
         /// <returns></returns>
-        public override PostgreSqlPersistenceExtension CreateExtension(ExtendedActorSystem system)
+        public override PostgreSqlPersistence CreateExtension(ExtendedActorSystem system)
         {
-            return new PostgreSqlPersistenceExtension(system);
-        }
-
-        /// <summary>
-        /// Returns a default configuration for akka persistence PostgreSQL-based journals and snapshot stores.
-        /// </summary>
-        /// <returns></returns>
-        public static Config DefaultConfiguration()
-        {
-            return ConfigurationFactory.FromResource<PostgreSqlPersistence>("Akka.Persistence.PostgreSql.postgresql.conf");
+            return new PostgreSqlPersistence(system);
         }
     }
 }
