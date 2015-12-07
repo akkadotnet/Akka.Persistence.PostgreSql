@@ -1,13 +1,7 @@
-﻿using System.Collections.Generic;
-using System.Data.SqlClient;
-using System.Threading;
-using System.Threading.Tasks;
-using Akka.Persistence.Snapshot;
-using Npgsql;
-using Akka.Persistence.Sql.Common.Snapshot;
+﻿using System.Data.Common;
 using Akka.Persistence.Sql.Common;
-using System;
-using System.Data.Common;
+using Akka.Persistence.Sql.Common.Snapshot;
+using Npgsql;
 
 namespace Akka.Persistence.PostgreSql.Snapshot
 {
@@ -16,11 +10,10 @@ namespace Akka.Persistence.PostgreSql.Snapshot
     /// </summary>
     public class PostgreSqlSnapshotStore : SqlSnapshotStore
     {
-        private readonly PostgreSqlPersistence _extension;
+        private readonly PostgreSqlPersistence _extension = PostgreSqlPersistence.Get(Context.System);
 
         public PostgreSqlSnapshotStore()
         {
-            _extension = PostgreSqlPersistence.Get(Context.System);
             QueryBuilder = new PostgreSqlSnapshotQueryBuilder(_extension.SnapshotSettings);
             QueryMapper = new PostgreSqlSnapshotQueryMapper(Context.System.Serialization);
         }
