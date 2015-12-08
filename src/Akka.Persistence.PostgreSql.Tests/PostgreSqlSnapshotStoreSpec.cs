@@ -1,6 +1,7 @@
 ﻿using System.Configuration;
 using Akka.Configuration;
 using Akka.Persistence.TestKit.Snapshot;
+using Xunit.Abstractions;
 
 namespace Akka.Persistence.PostgreSql.Tests
 {
@@ -34,8 +35,8 @@ namespace Akka.Persistence.PostgreSql.Tests
             DbUtils.Initialize();
         }
 
-        public PostgreSqlSnapshotStoreSpec()
-            : base(SpecConfig, "PostgreSqlSnapshotStoreSpec")
+        public PostgreSqlSnapshotStoreSpec(ITestOutputHelper output)
+            : base(SpecConfig, "PostgreSqlSnapshotStoreSpec", output: output)
         {
             Initialize();
         }

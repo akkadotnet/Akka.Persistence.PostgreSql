@@ -15,8 +15,8 @@ namespace Akka.Persistence.PostgreSql
                     sequence_nr BIGINT NOT NULL,
                     is_deleted BOOLEAN NOT NULL,
                     manifest VARCHAR(500) NOT NULL,
-                    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
                     payload BYTEA NOT NULL,
+                    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
                     CONSTRAINT {3}_pk PRIMARY KEY (persistence_id, sequence_nr)
                 );
                 CREATE INDEX {3}_sequence_nr_idx ON {0}.{1}(sequence_nr);

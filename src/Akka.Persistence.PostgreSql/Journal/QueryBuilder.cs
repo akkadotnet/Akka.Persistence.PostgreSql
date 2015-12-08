@@ -25,7 +25,7 @@ namespace Akka.Persistence.PostgreSql.Journal
             _tableName = tableName;
             _schemaName = schemaName;
 
-            _insertMessagesSql = "INSERT INTO {0}.{1} (persistence_id, sequence_nr, is_deleted, manifest, created_at, payload) VALUES (:persistence_id, :sequence_nr, :is_deleted, :manifest, :created_at, :payload)"
+            _insertMessagesSql = "INSERT INTO {0}.{1} (persistence_id, sequence_nr, is_deleted, manifest, payload, created_at) VALUES (:persistence_id, :sequence_nr, :is_deleted, :manifest, :payload, :created_at)"
                 .QuoteSchemaAndTable(_schemaName, _tableName);
             _selectHighestSequenceNrSql = @"SELECT MAX(sequence_nr) FROM {0}.{1} WHERE persistence_id = :persistence_id".QuoteSchemaAndTable(_schemaName, _tableName);
         }
@@ -39,7 +39,7 @@ namespace Akka.Persistence.PostgreSql.Journal
                 .Where(x => !string.IsNullOrEmpty(x));
 
             var where = string.Join(" AND ", sqlized);
-            var sql = new StringBuilder("SELECT persistence_id, sequence_nr, is_deleted, manifest, created_at, payload FROM {0}.{1} ".QuoteSchemaAndTable(_schemaName, _tableName));
+            var sql = new StringBuilder("SELECT persistence_id, sequence_nr, is_deleted, manifest, payload, created_at FROM {0}.{1} ".QuoteSchemaAndTable(_schemaName, _tableName));
             if (!string.IsNullOrEmpty(where))
             {
                 sql.Append(" WHERE ").Append(where);
@@ -172,8 +172,8 @@ namespace Akka.Persistence.PostgreSql.Journal
                     sequence_nr,
                     is_deleted,
                     manifest,
-                    created_at,
-                    payload ")
+                    payload,
+                    created_at ")
                 .Append(" FROM {0}.{1} WHERE persistence_id = :persistence_id".QuoteSchemaAndTable(_schemaName, _tableName));
 
             // since we guarantee type of fromSequenceNr, toSequenceNr and max
