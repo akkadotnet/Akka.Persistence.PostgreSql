@@ -29,10 +29,12 @@ Both journal and snapshot store share the same configuration keys (however they 
 - `class` (string with fully qualified type name) - determines class to be used as a persistent journal. Default: *Akka.Persistence.PostgreSql.Journal.PostgreSqlJournal, Akka.Persistence.PostgreSql* (for journal) and *Akka.Persistence.PostgreSql.Snapshot.PostgreSqlSnapshotStore, Akka.Persistence.PostgreSql* (for snapshot store).
 - `plugin-dispatcher` (string with configuration path) - describes a message dispatcher for persistent journal. Default: *akka.actor.default-dispatcher*
 - `connection-string` - connection string used to access PostgreSql database. Default: *none*.
+- `connection-string-name` - in case when connection-string is empty, this field specifies entry in the \*.config connection string section, from where connection string will be taken. Default: *none*.
 - `connection-timeout` - timespan determining default connection timeouts on database-related operations. Default: *30s*
 - `schema-name` - name of the database schema, where journal or snapshot store tables should be placed. Default: *public*
 - `table-name` - name of the table used by either journal or snapshot store. Default: *event_journal* (for journal) or *snapshot_store* (for snapshot store)
 - `auto-initialize` - flag determining if journal or snapshot store related tables should by automatically created when they have not been found in connected database. Default: *false*
+- `timestamp-provider` (journal only) - type of the object used to generate journal event timestamps. Default: *Akka.Persistence.Sql.Common.Journal.DefaultTimestampProvider, Akka.Persistence.Sql.Common*
 
 ### Custom SQL data queries
 
@@ -40,14 +42,14 @@ PostgreSql persistence plugin defines a default table schema used for both journ
 
 **EventJournal table**:
 
-    +----------------+-------------+------------+---------------+---------+
-    | persistence_id | sequence_nr | is_deleted | payload_type  | payload |
-    +----------------+-------------+------------+---------------+---------+
-    | varchar(200)   | bigint      | boolean    | varchar(500)  | bytea   |
-    +----------------+-------------+------------+---------------+---------+
- 
+    +----------------+-------------+------------+---------------+---------+--------------------------+
+    | persistence_id | sequence_nr | is_deleted | payload_type  | payload |       created_at         |
+    +----------------+-------------+------------+---------------+---------+--------------------------+
+    | varchar(200)   | bigint      | boolean    | varchar(500)  | bytea   | timestamp with time zone |
+    +----------------+-------------+------------+---------------+---------+--------------------------+
+
 **SnapshotStore table**:
- 
+
     +----------------+--------------+--------------------------+------------------+---------------+----------+
     | persistence_id | sequence_nr  | created_at               | created_at_ticks | snapshot_type | snapshot |
     +----------------+--------------+--------------------------+------------------+--------------------------+
@@ -59,9 +61,9 @@ PostgreSql persistence plugin defines a default table schema used for both journ
 Underneath Akka.Persistence.PostgreSql uses the Npgsql library to communicate with the database. You may choose not to use a dedicated built in ones, but to create your own being better fit for your use case. To do so, you have to create your own versions of `IJournalQueryBuilder` and `IJournalQueryMapper` (for custom journals) or `ISnapshotQueryBuilder` and `ISnapshotQueryMapper` (for custom snapshot store) and then attach inside journal, just like in the example below:
 
 ```csharp
-class MyCustomPostgreSqlJournal: Akka.Persistence.PostgreSql.Journal.PostgreSqlJournal 
+class MyCustomPostgreSqlJournal: Akka.Persistence.PostgreSql.Journal.PostgreSqlJournal
 {
-    public MyCustomPostgreSqlJournal() : base() 
+    public MyCustomPostgreSqlJournal() : base()
     {
         QueryBuilder = new MyCustomJournalQueryBuilder();
         QueryMapper = new MyCustomJournalQueryMapper();
