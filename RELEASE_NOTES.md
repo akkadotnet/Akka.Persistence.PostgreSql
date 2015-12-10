@@ -1,3 +1,5 @@
+#### 1.0.6 December 10 2015 ####
+
 #### 1.0.5 August 08 2015 ####
 
 - Changed tables schema: renamed payload_type column to manifest for journal and snapshot tables
