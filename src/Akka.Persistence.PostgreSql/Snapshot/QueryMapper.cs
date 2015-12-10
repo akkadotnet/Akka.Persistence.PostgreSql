@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Data.Common;
-using System.Data.SqlClient;
-using Npgsql;
 using Akka.Persistence.Sql.Common.Snapshot;
 
 namespace Akka.Persistence.PostgreSql.Snapshot

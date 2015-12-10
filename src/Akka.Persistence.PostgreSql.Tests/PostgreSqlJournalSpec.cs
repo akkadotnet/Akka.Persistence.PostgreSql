@@ -1,6 +1,7 @@
 ﻿using System.Configuration;
 using Akka.Configuration;
 using Akka.Persistence.TestKit.Journal;
+using Xunit.Abstractions;
 
 namespace Akka.Persistence.PostgreSql.Tests
 {
@@ -8,7 +9,7 @@ namespace Akka.Persistence.PostgreSql.Tests
     {
         private static readonly Config SpecConfig;
 
-        static PostgreSqlJournalSpec()
+        static PostgreSqlJournalSpec() 
         {
             var connectionString = ConfigurationManager.ConnectionStrings["TestDb"].ConnectionString;
 
@@ -34,8 +35,8 @@ namespace Akka.Persistence.PostgreSql.Tests
             DbUtils.Initialize();
         }
 
-        public PostgreSqlJournalSpec()
-            : base(SpecConfig, "PostgreSqlJournalSpec")
+        public PostgreSqlJournalSpec(ITestOutputHelper output)
+            : base(SpecConfig, "PostgreSqlJournalSpec", output: output)
         {
             Initialize();
         }
