@@ -2,79 +2,121 @@
 
 Akka Persistence journal and snapshot store backed by PostgreSql database.
 
-**WARNING: Akka.Persistence.PostgreSql plugin is still in beta and it's mechanics described below may be still subject to change**.
-
-### Setup
-
-To activate the journal plugin, add the following lines to actor system configuration file:
-
-```
-akka.persistence.journal.plugin = "akka.persistence.journal.postgresql"
-akka.persistence.journal.postgresql.connection-string = "<database connection string>"
-```
-
-Similar configuration may be used to setup a PostgreSql snapshot store:
-
-```
-akka.persistence.snapshot-store.plugin = "akka.persistence.snapshot-store.postgresql"
-akka.persistence.snapshot-store.postgresql.connection-string = "<database connection string>"
-```
-
-Remember that connection string must be provided separately to Journal and Snapshot Store. To finish setup simply initialize plugin using: `PostgreSqlPersistence.Init(actorSystem);`
+**WARNING: Akka.Persistence.PostgreSql plugin is still in beta and it's mechanics described bellow may be still subject to change**.
 
 ### Configuration
 
 Both journal and snapshot store share the same configuration keys (however they resides in separate scopes, so they are definied distinctly for either journal or snapshot store):
 
-- `class` (string with fully qualified type name) - determines class to be used as a persistent journal. Default: *Akka.Persistence.PostgreSql.Journal.PostgreSqlJournal, Akka.Persistence.PostgreSql* (for journal) and *Akka.Persistence.PostgreSql.Snapshot.PostgreSqlSnapshotStore, Akka.Persistence.PostgreSql* (for snapshot store).
-- `plugin-dispatcher` (string with configuration path) - describes a message dispatcher for persistent journal. Default: *akka.actor.default-dispatcher*
-- `connection-string` - connection string used to access PostgreSql database. Default: *none*.
-- `connection-string-name` - in case when connection-string is empty, this field specifies entry in the \*.config connection string section, from where connection string will be taken. Default: *none*.
-- `connection-timeout` - timespan determining default connection timeouts on database-related operations. Default: *30s*
-- `schema-name` - name of the database schema, where journal or snapshot store tables should be placed. Default: *public*
-- `table-name` - name of the table used by either journal or snapshot store. Default: *event_journal* (for journal) or *snapshot_store* (for snapshot store)
-- `auto-initialize` - flag determining if journal or snapshot store related tables should by automatically created when they have not been found in connected database. Default: *false*
-- `timestamp-provider` (journal only) - type of the object used to generate journal event timestamps. Default: *Akka.Persistence.Sql.Common.Journal.DefaultTimestampProvider, Akka.Persistence.Sql.Common*
+Remember that connection string must be provided separately to Journal and Snapshot Store.
 
-### Custom SQL data queries
+```hocon
+akka.persistence{
+	journal {
+		postgresql {
+			# qualified type name of the PostgreSql persistence journal actor
+			class = "Akka.Persistence.PostgreSql.Journal.PostgreSqlJournal, Akka.Persistence.PostgreSql"
 
-PostgreSql persistence plugin defines a default table schema used for both journal and snapshot store.
+			# dispatcher used to drive journal actor
+			plugin-dispatcher = "akka.actor.default-dispatcher"
 
-**EventJournal table**:
+			# connection string used for database access
+			connection-string = ""
 
-    +----------------+-------------+------------+---------------+---------+--------------------------+
-    | persistence_id | sequence_nr | is_deleted | payload_type  | payload |       created_at         |
-    +----------------+-------------+------------+---------------+---------+--------------------------+
-    | varchar(200)   | bigint      | boolean    | varchar(500)  | bytea   | timestamp with time zone |
-    +----------------+-------------+------------+---------------+---------+--------------------------+
+			# default SQL commands timeout
+			connection-timeout = 30s
 
-**SnapshotStore table**:
+			# PostgreSql schema name to table corresponding with persistent journal
+			schema-name = public
 
-    +----------------+--------------+--------------------------+------------------+---------------+----------+
-    | persistence_id | sequence_nr  | created_at               | created_at_ticks | snapshot_type | snapshot |
-    +----------------+--------------+--------------------------+------------------+--------------------------+
-    | varchar(200)   | bigint       | timestamp with time zone | smallint         | varchar(500)  | bytea    |
-    +----------------+--------------+--------------------------+------------------+--------------------------+
+			# PostgreSql table corresponding with persistent journal
+			table-name = event_journal
 
-**created_at and created_at_ticks - The max precision of a PostgreSQL timestamp is 6. The max precision of a .Net DateTime object is 7. Because of this differences, the additional ticks are saved in a separate column and combined during deserialization. There is also a check constraint restricting created_at_ticks to the range [0,10) to ensure that there are no precision differences in the opposite direction.**
+			# should corresponding journal table be initialized automatically
+			auto-initialize = off
+			
+			# timestamp provider used for generation of journal entries timestamps
+			timestamp-provider = "Akka.Persistence.Sql.Common.Journal.DefaultTimestampProvider, Akka.Persistence.Sql.Common"
+		
+			# metadata table
+			metadata-table-name = metadata
+		}
+	}
 
-Underneath Akka.Persistence.PostgreSql uses the Npgsql library to communicate with the database. You may choose not to use a dedicated built in ones, but to create your own being better fit for your use case. To do so, you have to create your own versions of `IJournalQueryBuilder` and `IJournalQueryMapper` (for custom journals) or `ISnapshotQueryBuilder` and `ISnapshotQueryMapper` (for custom snapshot store) and then attach inside journal, just like in the example below:
+	snapshot-store {
+		postgresql {
+			# qualified type name of the PostgreSql persistence journal actor
+			class = "Akka.Persistence.PostgreSql.Snapshot.PostgreSqlSnapshotStore, Akka.Persistence.PostgreSql"
 
-```csharp
-class MyCustomPostgreSqlJournal: Akka.Persistence.PostgreSql.Journal.PostgreSqlJournal
-{
-    public MyCustomPostgreSqlJournal() : base()
-    {
-        QueryBuilder = new MyCustomJournalQueryBuilder();
-        QueryMapper = new MyCustomJournalQueryMapper();
-    }
+			# dispatcher used to drive journal actor
+			plugin-dispatcher = ""akka.actor.default-dispatcher""
+
+			# connection string used for database access
+			connection-string = ""
+
+			# default SQL commands timeout
+			connection-timeout = 30s
+
+			# PostgreSql schema name to table corresponding with persistent journal
+			schema-name = public
+
+			# PostgreSql table corresponding with persistent journal
+			table-name = snapshot_store
+
+			# should corresponding journal table be initialized automatically
+			auto-initialize = off
+		}
+	}
 }
 ```
+### Table Schema
 
-The final step is to setup your custom journal using akka config:
+PostgreSql persistence plugin defines a default table schema used for journal, snapshot store and metadate table.
 
+```SQL
+CREATE TABLE {your_journal_table_name} (
+    persistence_id VARCHAR(255) NOT NULL,
+    sequence_nr BIGINT NOT NULL,
+    is_deleted BOOLEAN NOT NULL,
+    created_at BIGINT NOT NULL,
+    manifest VARCHAR(500) NOT NULL,
+    payload BYTEA NOT NULL,
+    CONSTRAINT {your_journal_table_name}_pk PRIMARY KEY (persistence_id, sequence_nr)
+);
+
+CREATE TABLE {your_snapshot_table_name} (
+    persistence_id VARCHAR(255) NOT NULL,
+    sequence_nr BIGINT NOT NULL,
+    created_at BIGINT NOT NULL,
+    manifest VARCHAR(500) NOT NULL,
+    snapshot BYTEA NOT NULL,
+    CONSTRAINT {your_snapshot_table_name}_pk PRIMARY KEY (persistence_id, sequence_nr)
+);
+
+CREATE TABLE {your_metadata_table_name} (
+    persistence_id VARCHAR(255) NOT NULL,
+    sequence_nr BIGINT NOT NULL,
+    CONSTRAINT {your_metadata_table_name}_pk PRIMARY KEY (persistence_id, sequence_nr)
+);
 ```
-akka.persistence.journal.postgresql.class = "MyModule.MyCustomPostgreSqlJournal, MyModule"
+
+### Migration
+
+#### From 1.0.6
+```SQL
+CREATE TABLE {your_metadata_table_name} (
+    persistence_id VARCHAR(255) NOT NULL,
+    sequence_nr BIGINT NOT NULL,
+    CONSTRAINT {your_metadata_table_name}_pk PRIMARY KEY (persistence_id, sequence_nr)
+);
+
+ALTER TABLE {your_journal_table_name} ADD COLUMN created_at_temp BIGINT NOT NULL;
+
+UPDATE {your_journal_table_name} SET created_at_temp=extract(epoch from create_at);
+
+ALTER TABLE {your_journal_table_name} DROP COLUMN create_at;
+ALTER TABLE {your_journal_table_name} DROP COLUMN created_at_ticks;
+ALTER TABLE {your_journal_table_name} RENAME COLUMN created_at_temp TO create_at;
 ```
 
 ### Tests

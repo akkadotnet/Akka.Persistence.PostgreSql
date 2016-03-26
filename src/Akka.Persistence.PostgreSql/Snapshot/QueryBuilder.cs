@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Data;
-using System.Data.SqlClient;
 using System.Text;
 using Npgsql;
 using NpgsqlTypes;
@@ -19,9 +17,9 @@ namespace Akka.Persistence.PostgreSql.Snapshot
         {
             var tableName = settings.TableName;
             var schemaName = settings.SchemaName;
-            _deleteSql = @"DELETE FROM {0}.{1} WHERE persistence_id = :persistence_id ".QuoteSchemaAndTable(schemaName, tableName);
-            _insertSql = @"INSERT INTO {0}.{1} (persistence_id, sequence_nr, created_at, created_at_ticks, manifest, snapshot) VALUES (:persistence_id, :sequence_nr, :created_at, :created_at_ticks, :manifest, :snapshot)".QuoteSchemaAndTable(schemaName, tableName);
-            _selectSql = @"SELECT persistence_id, sequence_nr, created_at, created_at_ticks, manifest, snapshot FROM {0}.{1} WHERE persistence_id = :persistence_id".QuoteSchemaAndTable(schemaName, tableName);
+            _deleteSql =@"DELETE FROM {0}.{1} WHERE persistence_id = :persistence_id ".QuoteSchemaAndTable(schemaName, tableName);
+            _selectSql = "SELECT persistence_id, sequence_nr, created_at, manifest, snapshot FROM {0}.{1} WHERE persistence_id = :persistence_id ".QuoteSchemaAndTable(schemaName, tableName);
+            _insertSql = "WITH upsert AS (UPDATE {0}.{1} SET created_at = :created_at, snapshot = :snapshot WHERE persistence_id = :persistence_id AND sequence_nr = :sequence_nr RETURNING *) INSERT INTO {0}.{1} (persistence_id, sequence_nr, created_at, manifest, snapshot) SELECT :persistence_id, :sequence_nr, :created_at, :manifest, :snapshot WHERE NOT EXISTS (SELECT * FROM upsert)".QuoteSchemaAndTable(schemaName, tableName);
         }
 
         public DbCommand DeleteOne(string persistenceId, long sequenceNr, DateTime timestamp)
@@ -36,19 +34,15 @@ namespace Akka.Persistence.PostgreSql.Snapshot
             if (sequenceNr < long.MaxValue && sequenceNr > 0)
             {
                 sb.Append(@"AND sequence_nr = :sequence_nr ");
-                sqlCommand.Parameters.Add(new NpgsqlParameter(":sequence_nr", NpgsqlDbType.Bigint) {Value = sequenceNr});
+                sqlCommand.Parameters.Add(new NpgsqlParameter(":sequence_nr", NpgsqlDbType.Bigint) { Value = sequenceNr });
             }
 
             if (timestamp > DateTime.MinValue && timestamp < DateTime.MaxValue)
             {
-                sb.Append(@"AND created_at = :created_at AND created_at_ticks = :created_at_ticks");
-                sqlCommand.Parameters.Add(new NpgsqlParameter(":created_at", NpgsqlDbType.Timestamp)
+                sb.Append(@"AND created_at = :created_at");
+                sqlCommand.Parameters.Add(new NpgsqlParameter(":created_at", NpgsqlDbType.Bigint)
                 {
-                    Value = GetMaxPrecisionTicks(timestamp)
-                });
-                sqlCommand.Parameters.Add(new NpgsqlParameter(":created_at_ticks", NpgsqlDbType.Smallint)
-                {
-                    Value = GetExtraTicks(timestamp)
+                    Value = timestamp.Ticks
                 });
             }
 
@@ -77,15 +71,10 @@ namespace Akka.Persistence.PostgreSql.Snapshot
 
             if (maxTimestamp > DateTime.MinValue && maxTimestamp < DateTime.MaxValue)
             {
-                sb.Append(
-                    @" AND (created_at < :created_at OR (created_at = :created_at AND created_at_ticks <= :created_at_ticks)) ");
-                sqlCommand.Parameters.Add(new NpgsqlParameter(":created_at", NpgsqlDbType.Timestamp)
+                sb.Append(@" AND created_at <= :created_at");
+                sqlCommand.Parameters.Add(new NpgsqlParameter(":created_at", NpgsqlDbType.Bigint)
                 {
-                    Value = GetMaxPrecisionTicks(maxTimestamp)
-                });
-                sqlCommand.Parameters.Add(new NpgsqlParameter(":created_at_ticks", NpgsqlDbType.Smallint)
-                {
-                    Value = GetExtraTicks(maxTimestamp)
+                    Value = maxTimestamp.Ticks
                 });
             }
 
@@ -102,8 +91,7 @@ namespace Akka.Persistence.PostgreSql.Snapshot
                 {
                     new NpgsqlParameter(":persistence_id", NpgsqlDbType.Varchar, entry.PersistenceId.Length) { Value = entry.PersistenceId },
                     new NpgsqlParameter(":sequence_nr", NpgsqlDbType.Bigint) { Value = entry.SequenceNr },
-                    new NpgsqlParameter(":created_at", NpgsqlDbType.Timestamp) { Value = GetMaxPrecisionTicks(entry.Timestamp) },
-                    new NpgsqlParameter(":created_at_ticks", NpgsqlDbType.Smallint) { Value = GetExtraTicks(entry.Timestamp) },
+                    new NpgsqlParameter(":created_at", NpgsqlDbType.Bigint) { Value = entry.Timestamp.Ticks },
                     new NpgsqlParameter(":manifest", NpgsqlDbType.Varchar, entry.SnapshotType.Length) { Value = entry.SnapshotType },
                     new NpgsqlParameter(":snapshot", NpgsqlDbType.Bytea, entry.Snapshot.Length) { Value = entry.Snapshot }
                 }
@@ -132,37 +120,16 @@ namespace Akka.Persistence.PostgreSql.Snapshot
 
             if (maxTimestamp > DateTime.MinValue && maxTimestamp < DateTime.MaxValue)
             {
-                sb.Append(
-                    @" AND (created_at < :created_at OR (created_at = :created_at AND created_at_ticks <= :created_at_ticks)) ");
-                sqlCommand.Parameters.Add(new NpgsqlParameter(":created_at", NpgsqlDbType.Timestamp)
+                sb.Append(@" AND (created_at <= :created_at) ");
+                sqlCommand.Parameters.Add(new NpgsqlParameter(":created_at", NpgsqlDbType.Bigint)
                 {
-                    Value = GetMaxPrecisionTicks(maxTimestamp)
-                });
-                sqlCommand.Parameters.Add(new NpgsqlParameter(":created_at_ticks", NpgsqlDbType.Smallint)
-                {
-                    Value = GetExtraTicks(maxTimestamp)
+                    Value = maxTimestamp.Ticks
                 });
             }
 
-            sb.Append(" ORDER BY sequence_nr DESC");
+            sb.Append(" ORDER BY sequence_nr DESC LIMIT 1");
             sqlCommand.CommandText = sb.ToString();
             return sqlCommand;
-        }
-
-        private static DateTime GetMaxPrecisionTicks(DateTime date)
-        {
-            var ticks = (date.Ticks / 10) * 10;
-
-            ticks = date.Ticks - ticks;
-
-            return date.AddTicks(-1 * ticks);
-        }
-
-        private static short GetExtraTicks(DateTime date)
-        {
-            var ticks = date.Ticks;
-
-            return (short)(ticks % 10);
         }
     }
 }

@@ -18,9 +18,7 @@ namespace Akka.Persistence.PostgreSql.Snapshot
             var persistenceId = reader.GetString(0);
             var sequenceNr = reader.GetInt64(1);
 
-            var timestamp = reader.GetDateTime(2);
-            var timestampTicks = reader.GetInt16(3);
-            timestamp = timestamp.AddTicks(timestampTicks);
+            var timestamp = new DateTime(reader.GetInt64(2));
 
             var metadata = new SnapshotMetadata(persistenceId, sequenceNr, timestamp);
             var snapshot = GetSnapshot(reader);
@@ -30,9 +28,9 @@ namespace Akka.Persistence.PostgreSql.Snapshot
 
         private object GetSnapshot(DbDataReader reader)
         {
-            var type = Type.GetType(reader.GetString(4), true);
+            var type = Type.GetType(reader.GetString(3), true);
             var serializer = _serialization.FindSerializerForType(type);
-            var binary = (byte[])reader[5];
+            var binary = (byte[])reader[4];
 
             var obj = serializer.FromBinary(binary, type);
 
