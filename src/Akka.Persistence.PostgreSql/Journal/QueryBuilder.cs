@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Data.SqlClient;
 using System.Text;
 using Npgsql;
 using NpgsqlTypes;
@@ -17,22 +15,30 @@ namespace Akka.Persistence.PostgreSql.Journal
         private readonly string _schemaName;
         private readonly string _tableName;
 
-        private readonly string _selectHighestSequenceNrSql;
         private readonly string _insertMessagesSql;
+        private readonly string _deleteSql;
+        private readonly string _selectHighestSequenceNrSql;
 
-        public PostgreSqlJournalQueryBuilder(string tableName, string schemaName)
+        public PostgreSqlJournalQueryBuilder(string tableName, string schemaName, string metadataTable)
         {
             _tableName = tableName;
             _schemaName = schemaName;
 
             _insertMessagesSql = "INSERT INTO {0}.{1} (persistence_id, sequence_nr, is_deleted, manifest, payload, created_at) VALUES (:persistence_id, :sequence_nr, :is_deleted, :manifest, :payload, :created_at)"
                 .QuoteSchemaAndTable(_schemaName, _tableName);
-            _selectHighestSequenceNrSql = @"SELECT MAX(sequence_nr) FROM {0}.{1} WHERE persistence_id = :persistence_id".QuoteSchemaAndTable(_schemaName, _tableName);
+
+            _deleteSql = "DELETE FROM {0}.{1} WHERE persistence_id = :persistence_id".QuoteSchemaAndTable(_schemaName, _tableName);
+
+            var sb = new StringBuilder("SELECT sequence_nr FROM ( ");
+            sb.Append("SELECT sequence_nr FROM {0}.{1} WHERE persistence_id = :persistence_id UNION ".QuoteSchemaAndTable(_schemaName, metadataTable));
+            sb.Append("SELECT sequence_nr FROM {0}.{1} WHERE persistence_id = :persistence_id".QuoteSchemaAndTable(_schemaName, tableName));
+            sb.Append(") as tbl ORDER BY sequence_nr DESC LIMIT 1");
+            _selectHighestSequenceNrSql = sb.ToString();
         }
 
         public DbCommand SelectEvents(IEnumerable<IHint> hints)
         {
-            var sqlCommand = new SqlCommand();
+            var sqlCommand = new NpgsqlCommand();
 
             var sqlized = hints
                 .Select(h => HintToSql(h, sqlCommand))
@@ -45,11 +51,13 @@ namespace Akka.Persistence.PostgreSql.Journal
                 sql.Append(" WHERE ").Append(where);
             }
 
+            sql.Append(" ORDER BY persistence_id, sequence_nr");
+
             sqlCommand.CommandText = sql.ToString();
             return sqlCommand;
         }
 
-        private string HintToSql(IHint hint, SqlCommand command)
+        private string HintToSql(IHint hint, NpgsqlCommand command)
         {
             if (hint is TimestampRange)
             {
@@ -59,13 +67,13 @@ namespace Akka.Persistence.PostgreSql.Journal
                 if (range.From.HasValue)
                 {
                     sb.Append(" created_at >= :TimestampFrom ");
-                    command.Parameters.AddWithValue("@TimestampFrom", range.From.Value);
+                    command.Parameters.AddWithValue("@TimestampFrom", range.From.Value.Ticks);
                 }
                 if (range.From.HasValue && range.To.HasValue) sb.Append("AND");
                 if (range.To.HasValue)
                 {
                     sb.Append(" created_at < :TimestampTo ");
-                    command.Parameters.AddWithValue("@TimestampTo", range.To.Value);
+                    command.Parameters.AddWithValue("@TimestampTo", range.To.Value.Ticks);
                 }
 
                 return sb.ToString();
@@ -73,11 +81,11 @@ namespace Akka.Persistence.PostgreSql.Journal
             if (hint is PersistenceIdRange)
             {
                 var range = (PersistenceIdRange)hint;
-                var sb = new StringBuilder(" PersistenceID IN (");
+                var sb = new StringBuilder(" persistence_id IN (");
                 var i = 0;
                 foreach (var persistenceId in range.PersistenceIds)
                 {
-                    var paramName = ":Pid" + (i++);
+                    var paramName = ":persistence_id" + (i++);
                     sb.Append(paramName).Append(',');
                     command.Parameters.AddWithValue(paramName, persistenceId);
                 }
@@ -121,46 +129,30 @@ namespace Akka.Persistence.PostgreSql.Journal
             command.Parameters.Add(":persistence_id", NpgsqlDbType.Varchar);
             command.Parameters.Add(":sequence_nr", NpgsqlDbType.Bigint);
             command.Parameters.Add(":is_deleted", NpgsqlDbType.Boolean);
-            command.Parameters.Add(":created_at", NpgsqlDbType.Timestamp);
+            command.Parameters.Add(":created_at", NpgsqlDbType.Bigint);
             command.Parameters.Add(":manifest", NpgsqlDbType.Varchar);
             command.Parameters.Add(":payload", NpgsqlDbType.Bytea);
 
             return command;
         }
 
-        public DbCommand DeleteBatchMessages(string persistenceId, long toSequenceNr, bool permanent)
-        {
-            var sql = BuildDeleteSql(toSequenceNr, permanent);
-            var command = new NpgsqlCommand(sql)
-            {
-                Parameters = { PersistenceIdToSqlParam(persistenceId) }
-            };
-
-            return command;
-        }
-
-        private string BuildDeleteSql(long toSequenceNr, bool permanent)
+        public DbCommand DeleteBatchMessages(string persistenceId, long toSequenceNr)
         {
             var sqlBuilder = new StringBuilder();
 
-            if (permanent)
-            {
-                sqlBuilder.Append("DELETE FROM {0}.{1} ".QuoteSchemaAndTable(_schemaName, _tableName));
-            }
-            else
-            {
-                sqlBuilder.Append("UPDATE {0}.{1} SET is_deleted = true ".QuoteSchemaAndTable(_schemaName, _tableName));
-            }
-
-            sqlBuilder.Append("WHERE persistence_id = :persistence_id");
+            sqlBuilder.Append(_deleteSql);
 
             if (toSequenceNr != long.MaxValue)
             {
                 sqlBuilder.Append(" AND sequence_nr <= ").Append(toSequenceNr);
             }
 
-            var sql = sqlBuilder.ToString();
-            return sql;
+            var command = new NpgsqlCommand(sqlBuilder.ToString())
+            {
+                Parameters = { PersistenceIdToSqlParam(persistenceId) }
+            };
+
+            return command;
         }
 
         private string BuildSelectMessagesSql(long fromSequenceNr, long toSequenceNr, long max)

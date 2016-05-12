@@ -18,10 +18,16 @@ namespace Akka.Persistence.PostgreSql
         /// </summary>
         public bool AutoInitialize { get; private set; }
 
+        /// <summary>
+        /// Metadata table name
+        /// </summary>
+        public string MetadataTableName { get; private set; }
+
         public PostgreSqlJournalSettings(Config config)
             : base(config)
         {
             AutoInitialize = config.GetBoolean("auto-initialize");
+            MetadataTableName = config.GetString("metadata-table-name");
         }
     }
 
@@ -87,6 +93,7 @@ namespace Akka.Persistence.PostgreSql
                     : JournalSettings.ConnectionString;
 
                 PostgreSqlInitializer.CreatePostgreSqlJournalTables(connectionString, JournalSettings.SchemaName, JournalSettings.TableName);
+                PostgreSqlInitializer.CreatePostgreSqlMetadataTables(connectionString, JournalSettings.SchemaName, JournalSettings.MetadataTableName);
             }
 
             if (SnapshotSettings.AutoInitialize)
