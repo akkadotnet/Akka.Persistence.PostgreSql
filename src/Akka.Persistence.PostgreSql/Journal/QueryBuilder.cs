@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Data.SqlClient;
 using System.Text;
 using Npgsql;
 using NpgsqlTypes;
@@ -32,7 +30,7 @@ namespace Akka.Persistence.PostgreSql.Journal
 
         public DbCommand SelectEvents(IEnumerable<IHint> hints)
         {
-            var sqlCommand = new SqlCommand();
+            var sqlCommand = new NpgsqlCommand();
 
             var sqlized = hints
                 .Select(h => HintToSql(h, sqlCommand))
@@ -49,7 +47,7 @@ namespace Akka.Persistence.PostgreSql.Journal
             return sqlCommand;
         }
 
-        private string HintToSql(IHint hint, SqlCommand command)
+        private string HintToSql(IHint hint, NpgsqlCommand command)
         {
             if (hint is TimestampRange)
             {
@@ -73,7 +71,7 @@ namespace Akka.Persistence.PostgreSql.Journal
             if (hint is PersistenceIdRange)
             {
                 var range = (PersistenceIdRange)hint;
-                var sb = new StringBuilder(" PersistenceID IN (");
+                var sb = new StringBuilder(" persistence_id IN (");
                 var i = 0;
                 foreach (var persistenceId in range.PersistenceIds)
                 {

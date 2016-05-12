@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Configuration;
-using System.Data.SqlClient;
-using Akka.Dispatch.SysMsg;
 using Npgsql;
 
 namespace Akka.Persistence.PostgreSql.Tests

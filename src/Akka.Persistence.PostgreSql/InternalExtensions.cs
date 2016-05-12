@@ -1,6 +1,4 @@
-﻿using System;
-using System.Data.SqlClient;
-using Npgsql;
+﻿using Npgsql;
 
 namespace Akka.Persistence.PostgreSql
 {
