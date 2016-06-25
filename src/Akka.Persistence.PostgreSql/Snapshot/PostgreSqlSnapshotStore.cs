@@ -1,5 +1,13 @@
-﻿using System.Data.Common;
-using Akka.Persistence.Sql.Common;
+﻿//-----------------------------------------------------------------------
+// <copyright file="PostgreSqlSnapshotStore.cs" company="Akka.NET Project">
+//     Copyright (C) 2009-2016 Lightbend Inc. <http://www.lightbend.com>
+//     Copyright (C) 2013-2016 Akka.NET project <https://github.com/akkadotnet/akka.net>
+// </copyright>
+//-----------------------------------------------------------------------
+
+using System;
+using System.Data.Common;
+using Akka.Configuration;
 using Akka.Persistence.Sql.Common.Snapshot;
 using Npgsql;
 
@@ -10,20 +18,38 @@ namespace Akka.Persistence.PostgreSql.Snapshot
     /// </summary>
     public class PostgreSqlSnapshotStore : SqlSnapshotStore
     {
-        private readonly PostgreSqlPersistence _extension = PostgreSqlPersistence.Get(Context.System);
-
-        public PostgreSqlSnapshotStore()
+        public readonly PostgreSqlPersistence Extension = PostgreSqlPersistence.Get(Context.System);
+        public PostgreSqlSnapshotStoreSettings SnapshotSettings { get; }
+        public PostgreSqlSnapshotStore(Config snapshotConfig) : base(snapshotConfig)
         {
-            QueryBuilder = new PostgreSqlSnapshotQueryBuilder(_extension.SnapshotSettings);
-            QueryMapper = new PostgreSqlSnapshotQueryMapper(Context.System.Serialization);
-        }
+            var config = snapshotConfig.WithFallback(Extension.DefaultJournalConfig);
+            StoredAsType storedAs;
+            var storedAsString = config.GetString("stored-as");
+            if (!Enum.TryParse(storedAsString, true, out storedAs))
+            {
+                throw new ConfigurationException($"Value [{storedAsString}] of the 'stored-as' HOCON config key is not valid. Valid values: bytea, json, jsonb.");
+            }
 
+            QueryExecutor = new PostgreSqlQueryExecutor(new PostgreSqlQueryConfiguration(
+                schemaName: config.GetString("schema-name"),
+                snapshotTableName: config.GetString("table-name"),
+                persistenceIdColumnName: "persistence_id",
+                sequenceNrColumnName: "sequence_nr",
+                payloadColumnName: "payload",
+                manifestColumnName: "manifest",
+                timestampColumnName: "created_at",
+                timeout: config.GetTimeSpan("connection-timeout"),
+                storedAs: storedAs),
+                    Context.System.Serialization);
+
+            SnapshotSettings = new PostgreSqlSnapshotStoreSettings(config);
+        }
 
         protected override DbConnection CreateDbConnection(string connectionString)
         {
             return new NpgsqlConnection(connectionString);
         }
 
-        protected override SnapshotStoreSettings Settings { get { return _extension.SnapshotSettings; } }
+        public override ISnapshotQueryExecutor QueryExecutor { get; }
     }
 }

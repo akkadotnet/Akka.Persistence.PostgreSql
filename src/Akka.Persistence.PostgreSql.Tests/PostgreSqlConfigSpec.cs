@@ -1,12 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿//-----------------------------------------------------------------------
+// <copyright file="PostgreSqlConfigSpec.cs" company="Akka.NET Project">
+//     Copyright (C) 2009-2016 Lightbend Inc. <http://www.lightbend.com>
+//     Copyright (C) 2013-2016 Akka.NET project <https://github.com/akkadotnet/akka.net>
+// </copyright>
+//-----------------------------------------------------------------------
+
+using System;
 using Xunit;
 
 namespace Akka.Persistence.PostgreSql.Tests
 {
+    [Collection("PostgreSqlSpec")]
     public class PostgreSqlConfigSpec : Akka.TestKit.Xunit2.TestKit
     {
         [Fact]
@@ -15,7 +19,7 @@ namespace Akka.Persistence.PostgreSql.Tests
             PostgreSqlPersistence.Get(Sys);
 
             var config = Sys.Settings.Config.GetConfig("akka.persistence.journal.postgresql");
-
+            
             Assert.NotNull(config);
             Assert.Equal("Akka.Persistence.PostgreSql.Journal.PostgreSqlJournal, Akka.Persistence.PostgreSql", config.GetString("class"));
             Assert.Equal("akka.actor.default-dispatcher", config.GetString("plugin-dispatcher"));
