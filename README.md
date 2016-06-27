@@ -13,6 +13,7 @@ Remember that connection string must be provided separately to Journal and Snaps
 ```hocon
 akka.persistence{
 	journal {
+		plugin = "akka.persistence.journal.postgresql"
 		postgresql {
 			# qualified type name of the PostgreSql persistence journal actor
 			class = "Akka.Persistence.PostgreSql.Journal.PostgreSqlJournal, Akka.Persistence.PostgreSql"
@@ -44,6 +45,7 @@ akka.persistence{
 	}
 
 	snapshot-store {
+		plugin = "akka.persistence.snapshot-store.postgresql"
 		postgresql {
 			# qualified type name of the PostgreSql persistence journal actor
 			class = "Akka.Persistence.PostgreSql.Snapshot.PostgreSqlSnapshotStore, Akka.Persistence.PostgreSql"
