@@ -1,4 +1,11 @@
-﻿using System.Configuration;
+﻿//-----------------------------------------------------------------------
+// <copyright file="PostgreSqlSnapshotStoreSpec.cs" company="Akka.NET Project">
+//     Copyright (C) 2009-2016 Lightbend Inc. <http://www.lightbend.com>
+//     Copyright (C) 2013-2016 Akka.NET project <https://github.com/akkadotnet/akka.net>
+// </copyright>
+//-----------------------------------------------------------------------
+
+using System.Configuration;
 using Akka.Configuration;
 using Akka.Persistence.TestKit.Snapshot;
 using Akka.TestKit;
@@ -14,8 +21,6 @@ namespace Akka.Persistence.PostgreSql.Tests
 
         static PostgreSqlSnapshotStoreSpec()
         {
-            var connectionString = ConfigurationManager.ConnectionStrings["TestDb"].ConnectionString;
-
             var config = @"
                 akka.persistence {
                     publish-plugin-commands = on
@@ -27,7 +32,7 @@ namespace Akka.Persistence.PostgreSql.Tests
                             table-name = snapshot_store
                             schema-name = public
                             auto-initialize = on
-                            connection-string = """ + connectionString + @"""
+                            connection-string-name = ""TestDb""
                         }
                     }
                 }";

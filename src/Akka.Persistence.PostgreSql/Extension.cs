@@ -1,33 +1,40 @@
-﻿using System;
-using System.Configuration;
+﻿//-----------------------------------------------------------------------
+// <copyright file="Extension.cs" company="Akka.NET Project">
+//     Copyright (C) 2009-2016 Lightbend Inc. <http://www.lightbend.com>
+//     Copyright (C) 2013-2016 Akka.NET project <https://github.com/akkadotnet/akka.net>
+// </copyright>
+//-----------------------------------------------------------------------
+
+using System;
 using Akka.Actor;
 using Akka.Configuration;
 using Akka.Persistence.Sql.Common;
 
 namespace Akka.Persistence.PostgreSql
 {
+    public enum StoredAsType
+    {
+        ByteA,
+        Json,
+        JsonB
+    }
+
     /// <summary>
     /// Configuration settings representation targeting PostgreSql journal actor.
     /// </summary>
     public class PostgreSqlJournalSettings : JournalSettings
     {
         public const string JournalConfigPath = "akka.persistence.journal.postgresql";
-
+        
         /// <summary>
-        /// Flag determining in case of event journal table missing, it should be automatically initialized.
+        /// Specifies Postgres data type for payload column.
         /// </summary>
-        public bool AutoInitialize { get; private set; }
-
-        /// <summary>
-        /// Metadata table name
-        /// </summary>
-        public string MetadataTableName { get; private set; }
+        public StoredAsType StoredAs { get; set; }
 
         public PostgreSqlJournalSettings(Config config)
             : base(config)
         {
-            AutoInitialize = config.GetBoolean("auto-initialize");
-            MetadataTableName = config.GetString("metadata-table-name");
+            StoredAs = (StoredAsType)Enum.Parse(typeof(StoredAsType), config.GetString("stored-as"), true);
         }
     }
 
@@ -38,15 +45,9 @@ namespace Akka.Persistence.PostgreSql
     {
         public const string SnapshotStoreConfigPath = "akka.persistence.snapshot-store.postgresql";
 
-        /// <summary>
-        /// Flag determining in case of snapshot store table missing, it should be automatically initialized.
-        /// </summary>
-        public bool AutoInitialize { get; private set; }
-
         public PostgreSqlSnapshotStoreSettings(Config config)
             : base(config)
         {
-            AutoInitialize = config.GetBoolean("auto-initialize");
         }
     }
 
@@ -55,6 +56,9 @@ namespace Akka.Persistence.PostgreSql
     /// </summary>
     public class PostgreSqlPersistence : IExtension
     {
+        public readonly Config DefaultJournalConfig;
+        public readonly Config DefaultSnapshotConfig;
+
         /// <summary>
         /// Returns a default configuration for akka persistence SQLite-based journals and snapshot stores.
         /// </summary>
@@ -69,41 +73,12 @@ namespace Akka.Persistence.PostgreSql
             return system.WithExtension<PostgreSqlPersistence, PostgreSqlPersistenceProvider>();
         }
 
-        /// <summary>
-        /// Journal-related settings loaded from HOCON configuration.
-        /// </summary>
-        public readonly PostgreSqlJournalSettings JournalSettings;
-
-        /// <summary>
-        /// Snapshot store related settings loaded from HOCON configuration.
-        /// </summary>
-        public readonly PostgreSqlSnapshotStoreSettings SnapshotSettings;
-
         public PostgreSqlPersistence(ExtendedActorSystem system)
         {
             system.Settings.InjectTopLevelFallback(DefaultConfiguration());
 
-            JournalSettings = new PostgreSqlJournalSettings(system.Settings.Config.GetConfig(PostgreSqlJournalSettings.JournalConfigPath));
-            SnapshotSettings = new PostgreSqlSnapshotStoreSettings(system.Settings.Config.GetConfig(PostgreSqlSnapshotStoreSettings.SnapshotStoreConfigPath));
-
-            if (JournalSettings.AutoInitialize)
-            {
-                var connectionString = string.IsNullOrEmpty(JournalSettings.ConnectionString)
-                    ? ConfigurationManager.ConnectionStrings[JournalSettings.ConnectionStringName].ConnectionString
-                    : JournalSettings.ConnectionString;
-
-                PostgreSqlInitializer.CreatePostgreSqlJournalTables(connectionString, JournalSettings.SchemaName, JournalSettings.TableName);
-                PostgreSqlInitializer.CreatePostgreSqlMetadataTables(connectionString, JournalSettings.SchemaName, JournalSettings.MetadataTableName);
-            }
-
-            if (SnapshotSettings.AutoInitialize)
-            {
-                var connectionString = string.IsNullOrEmpty(SnapshotSettings.ConnectionString)
-                    ? ConfigurationManager.ConnectionStrings[SnapshotSettings.ConnectionStringName].ConnectionString
-                    : SnapshotSettings.ConnectionString;
-
-                PostgreSqlInitializer.CreatePostgreSqlSnapshotStoreTables(connectionString, SnapshotSettings.SchemaName, SnapshotSettings.TableName);
-            }
+            DefaultJournalConfig = system.Settings.Config.GetConfig(PostgreSqlJournalSettings.JournalConfigPath);
+            DefaultSnapshotConfig = system.Settings.Config.GetConfig(PostgreSqlSnapshotStoreSettings.SnapshotStoreConfigPath);
         }
     }
 
@@ -112,7 +87,6 @@ namespace Akka.Persistence.PostgreSql
     /// </summary>
     public class PostgreSqlPersistenceProvider : ExtensionIdProvider<PostgreSqlPersistence>
     {
-        
         /// <summary>
         /// Creates an actor system extension for akka persistence PostgreSQL support.
         /// </summary>

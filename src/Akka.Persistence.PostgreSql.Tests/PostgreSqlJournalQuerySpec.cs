@@ -1,6 +1,13 @@
-﻿using System.Configuration;
+﻿//-----------------------------------------------------------------------
+// <copyright file="PostgreSqlJournalQuerySpec.cs" company="Akka.NET Project">
+//     Copyright (C) 2009-2016 Lightbend Inc. <http://www.lightbend.com>
+//     Copyright (C) 2013-2016 Akka.NET project <https://github.com/akkadotnet/akka.net>
+// </copyright>
+//-----------------------------------------------------------------------
+
+using System.Configuration;
 using Akka.Configuration;
-using Akka.Persistence.Sql.Common.TestKit;
+using Akka.Persistence.Sql.TestKit;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -13,8 +20,6 @@ namespace Akka.Persistence.PostgreSql.Tests
 
         static PostgreSqlJournalQuerySpec()
         {
-            var connectionString = ConfigurationManager.ConnectionStrings["TestDb"].ConnectionString;
-
             var specString = @"
                 akka.persistence {
                     publish-plugin-commands = on
@@ -25,7 +30,7 @@ namespace Akka.Persistence.PostgreSql.Tests
                             plugin-dispatcher = ""akka.actor.default-dispatcher""
                             table-name = event_journal
                             auto-initialize = on
-                            connection-string = """ + connectionString + @"""
+                            connection-string-name = ""TestDb""
                         }
                     }
                 } " + TimestampConfig("akka.persistence.journal.postgresql");

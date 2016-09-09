@@ -41,6 +41,9 @@ akka.persistence{
 		
 			# metadata table
 			metadata-table-name = metadata
+
+			# defines column db type used to store payload. Available option: BYTEA (default), JSON, JSONB
+			stored-as = BYTEA
 		}
 	}
 
@@ -67,6 +70,9 @@ akka.persistence{
 
 			# should corresponding journal table be initialized automatically
 			auto-initialize = off
+			
+			# defines column db type used to store payload. Available option: BYTEA (default), JSON, JSONB
+			stored-as = BYTEA
 		}
 	}
 }
@@ -83,6 +89,7 @@ CREATE TABLE {your_journal_table_name} (
     created_at BIGINT NOT NULL,
     manifest VARCHAR(500) NOT NULL,
     payload BYTEA NOT NULL,
+    tags VARCHAR(100) NULL,
     CONSTRAINT {your_journal_table_name}_pk PRIMARY KEY (persistence_id, sequence_nr)
 );
 
@@ -104,7 +111,7 @@ CREATE TABLE {your_metadata_table_name} (
 
 ### Migration
 
-#### From 1.0.6
+#### From 1.0.6 to 1.1.0
 ```SQL
 CREATE TABLE {your_metadata_table_name} (
     persistence_id VARCHAR(255) NOT NULL,
@@ -112,6 +119,7 @@ CREATE TABLE {your_metadata_table_name} (
     CONSTRAINT {your_metadata_table_name}_pk PRIMARY KEY (persistence_id, sequence_nr)
 );
 
+ALTER TABLE {your_journal_table_name} ADD COLUMN tags VARCHAR(100) NULL;
 ALTER TABLE {your_journal_table_name} ADD COLUMN created_at_temp BIGINT NOT NULL;
 
 UPDATE {your_journal_table_name} SET created_at_temp=extract(epoch from create_at);
