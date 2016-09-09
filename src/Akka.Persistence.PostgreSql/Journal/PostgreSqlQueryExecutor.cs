@@ -32,10 +32,10 @@ namespace Akka.Persistence.PostgreSql.Journal
         {
             _configuration = configuration;
             var storedAs = configuration.StoredAs.ToString().ToUpperInvariant();
-
-            ByTagSql = base.ByTagSql + " LIMIT @Take OFFSET @Skip";
+            
             CreateEventsJournalSql = $@"
                 CREATE TABLE IF NOT EXISTS {Configuration.FullJournalTableName} (
+                    {Configuration.OrderingColumnName} BIGSERIAL NOT NULL PRIMARY KEY,
                     {Configuration.PersistenceIdColumnName} VARCHAR(255) NOT NULL,
                     {Configuration.SequenceNrColumnName} BIGINT NOT NULL,
                     {Configuration.IsDeletedColumnName} BOOLEAN NOT NULL,
@@ -43,7 +43,7 @@ namespace Akka.Persistence.PostgreSql.Journal
                     {Configuration.ManifestColumnName} VARCHAR(500) NOT NULL,
                     {Configuration.PayloadColumnName} {storedAs} NOT NULL,
                     {Configuration.TagsColumnName} VARCHAR(100) NULL,
-                    CONSTRAINT {Configuration.JournalEventsTableName}_pk PRIMARY KEY ({Configuration.PersistenceIdColumnName}, {Configuration.SequenceNrColumnName})
+                    CONSTRAINT {Configuration.JournalEventsTableName}_uq UNIQUE ({Configuration.PersistenceIdColumnName}, {Configuration.SequenceNrColumnName})
                 );
                 ";
 
@@ -76,7 +76,6 @@ namespace Akka.Persistence.PostgreSql.Journal
         protected override DbCommand CreateCommand(DbConnection connection) => ((NpgsqlConnection)connection).CreateCommand();
         protected override string CreateEventsJournalSql { get; }
         protected override string CreateMetaTableSql { get; }
-        protected override string ByTagSql { get; }
 
         protected override void WriteEvent(DbCommand command, IPersistentRepresentation e, IImmutableSet<string> tags)
         {
@@ -141,11 +140,12 @@ namespace Akka.Persistence.PostgreSql.Journal
             string timestampColumnName,
             string isDeletedColumnName,
             string tagsColumnName,
+            string orderingColumn,
             TimeSpan timeout,
             StoredAsType storedAs, 
             JsonSerializerSettings jsonSerializerSettings = null)
             : base(schemaName, journalEventsTableName, metaTableName, persistenceIdColumnName, sequenceNrColumnName,
-                  payloadColumnName, manifestColumnName, timestampColumnName, isDeletedColumnName, tagsColumnName, timeout)
+                  payloadColumnName, manifestColumnName, timestampColumnName, isDeletedColumnName, tagsColumnName, orderingColumn, timeout)
         {
             StoredAs = storedAs;
             JsonSerializerSettings = jsonSerializerSettings ?? new JsonSerializerSettings

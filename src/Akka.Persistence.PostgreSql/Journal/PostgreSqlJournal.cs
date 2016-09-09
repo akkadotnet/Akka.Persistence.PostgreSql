@@ -43,6 +43,7 @@ namespace Akka.Persistence.PostgreSql.Journal
                 timestampColumnName: "created_at",
                 isDeletedColumnName: "is_deleted",
                 tagsColumnName: "tags",
+                orderingColumn: "ordering",
                 timeout: config.GetTimeSpan("connection-timeout"),
                 storedAs: storedAs), 
                     Context.System.Serialization,
