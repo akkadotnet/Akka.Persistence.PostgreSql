@@ -83,6 +83,7 @@ PostgreSql persistence plugin defines a default table schema used for journal, s
 
 ```SQL
 CREATE TABLE {your_journal_table_name} (
+	ordering BIGSERIAL NOT NULL PRIMARY KEY,
     persistence_id VARCHAR(255) NOT NULL,
     sequence_nr BIGINT NOT NULL,
     is_deleted BOOLEAN NOT NULL,
@@ -90,7 +91,7 @@ CREATE TABLE {your_journal_table_name} (
     manifest VARCHAR(500) NOT NULL,
     payload BYTEA NOT NULL,
     tags VARCHAR(100) NULL,
-    CONSTRAINT {your_journal_table_name}_pk PRIMARY KEY (persistence_id, sequence_nr)
+    CONSTRAINT {your_journal_table_name}_uq UNIQUE (persistence_id, sequence_nr)
 );
 
 CREATE TABLE {your_snapshot_table_name} (
@@ -119,7 +120,10 @@ CREATE TABLE {your_metadata_table_name} (
     CONSTRAINT {your_metadata_table_name}_pk PRIMARY KEY (persistence_id, sequence_nr)
 );
 
+ALTER TABLE {your_journal_table_name} DROP CONSTRAINT {your_journal_table_name}_pk;
+ALTER TABLE {your_journal_table_name} ADD COLUMN ordering BIGSERIAL NOT NULL PRIMARY KEY;
 ALTER TABLE {your_journal_table_name} ADD COLUMN tags VARCHAR(100) NULL;
+ALTER TABLE {your_journal_table_name} ADD CONSTRAINT {your_journal_table_name}_uq UNIQUE (persistence_id, sequence_nr);
 ALTER TABLE {your_journal_table_name} ADD COLUMN created_at_temp BIGINT NOT NULL;
 
 UPDATE {your_journal_table_name} SET created_at_temp=extract(epoch from create_at);
