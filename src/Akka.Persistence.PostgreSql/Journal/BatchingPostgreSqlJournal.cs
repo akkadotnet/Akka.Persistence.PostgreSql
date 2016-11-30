@@ -47,9 +47,11 @@ namespace Akka.Persistence.PostgreSql.Journal
                 connectionString: connectionString,
                 maxConcurrentOperations: config.GetInt("max-concurrent-operations", 64),
                 maxBatchSize: config.GetInt("max-batch-size", 100),
+                maxBufferSize: config.GetInt("max-buffer-size", 500000),
                 autoInitialize: config.GetBoolean("auto-initialize", false),
                 connectionTimeout: config.GetTimeSpan("connection-timeout", TimeSpan.FromSeconds(30)),
                 circuitBreakerSettings: CircuitBreakerSettings.Create(config.GetConfig("circuit-breaker")),
+                replayFilterSettings: ReplayFilterSettings.Create(config.GetConfig("replay-filter")), 
                 namingConventions: new QueryConfiguration(
                     schemaName: config.GetString("schema-name", "public"),
                     journalEventsTableName: config.GetString("table-name", "event_journal"),
@@ -70,10 +72,10 @@ namespace Akka.Persistence.PostgreSql.Journal
                 });
         }
 
-        public BatchingPostgresJournalSetup(string connectionString, int maxConcurrentOperations, int maxBatchSize, bool autoInitialize,
-            TimeSpan connectionTimeout, CircuitBreakerSettings circuitBreakerSettings, QueryConfiguration namingConventions, 
+        public BatchingPostgresJournalSetup(string connectionString, int maxConcurrentOperations, int maxBatchSize, int maxBufferSize, bool autoInitialize,
+            TimeSpan connectionTimeout, CircuitBreakerSettings circuitBreakerSettings, ReplayFilterSettings replayFilterSettings, QueryConfiguration namingConventions, 
             StoredAsType storedAs, JsonSerializerSettings jsonSerializerSettings = null)
-            : base(connectionString, maxConcurrentOperations, maxBatchSize, autoInitialize, connectionTimeout, circuitBreakerSettings, namingConventions)
+            : base(connectionString, maxConcurrentOperations, maxBatchSize, maxBufferSize, autoInitialize, connectionTimeout, circuitBreakerSettings, replayFilterSettings, namingConventions)
         {
             StoredAs = storedAs;
             JsonSerializerSettings = jsonSerializerSettings;
