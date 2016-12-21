@@ -51,17 +51,17 @@ let testOutput = "TestResults"
 let nugetDir = binDir @@ "nuget"
 let workingDir = binDir @@ "build"
 let libDir = workingDir @@ @"lib\net45\"
-let nugetExe = FullName @"src\.nuget\NuGet.exe"
+let nugetExe = FullName @"./src/.nuget/NuGet.exe"
 let slnFile = "./src/Akka.Persistence.PostgreSql.sln"
 
 open Fake.RestorePackageHelper
 Target "RestorePackages" (fun _ -> 
-     slnFile
-     |> RestoreMSSolutionPackages (fun p ->
-         { p with
-             OutputPath = "./src/packages"
-             Retries = 4 })
- )
+    slnFile
+    |> RestoreMSSolutionPackages (fun p ->
+        { p with
+            OutputPath = "./src/packages"
+            Retries = 4 })
+)
 
 //--------------------------------------------------------------------------------
 // Clean build results
@@ -184,13 +184,15 @@ let updateNugetPackages _ =
                     ConfigFile = Some (getConfigFile isPreRelease)
                     Prerelease = true
                     ToolPath = nugetExe
-                    RepositoryPath = "src/Packages"
+                    RepositoryPath = "./src/packages"
                     Ids = getPackages project
                     }) config
 
 Target "UpdateDependencies" <| fun _ ->
     printfn "Invoking updateNugetPackages"
-    updateNugetPackages()
+    match Fake.EnvironmentHelper.isMono with
+    | false -> updateNugetPackages()
+    | true -> () // don't run this function if building with Mono, it doesn't work
 
 //--------------------------------------------------------------------------------
 // Clean nuget directory
