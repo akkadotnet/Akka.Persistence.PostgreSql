@@ -123,7 +123,7 @@ Target "CleanTests" <| fun _ ->
 //--------------------------------------------------------------------------------
 // Run tests
 
-open XUnit2Helper
+open Fake.Testing
 Target "RunTests" <| fun _ ->  
     let xunitTestAssemblies = !! "src/**/bin/Release/*.Tests.dll" 
 
@@ -132,7 +132,8 @@ Target "RunTests" <| fun _ ->
     let xunitToolPath = findToolInSubPath "xunit.console.exe" "src/packages/xunit.runner.console*/tools"
     printfn "Using XUnit runner: %s" xunitToolPath
     xUnit2
-        (fun p -> { p with OutputDir = testOutput; ToolPath = xunitToolPath })
+        (fun p -> { p with HtmlOutputPath = Some(testOutput @@ "xunit.html")
+                           ForceTeamCity = true })
         xunitTestAssemblies
 
 //--------------------------------------------------------------------------------
