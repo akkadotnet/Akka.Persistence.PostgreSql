@@ -51,17 +51,17 @@ let testOutput = "TestResults"
 let nugetDir = binDir @@ "nuget"
 let workingDir = binDir @@ "build"
 let libDir = workingDir @@ @"lib\net45\"
-let nugetExe = FullName @"src\.nuget\NuGet.exe"
+let nugetExe = FullName @"./src/.nuget/NuGet.exe"
 let slnFile = "./src/Akka.Persistence.PostgreSql.sln"
 
 open Fake.RestorePackageHelper
 Target "RestorePackages" (fun _ -> 
-     slnFile
-     |> RestoreMSSolutionPackages (fun p ->
-         { p with
-             OutputPath = "./src/packages"
-             Retries = 4 })
- )
+    slnFile
+    |> RestoreMSSolutionPackages (fun p ->
+        { p with
+            OutputPath = "./src/packages"
+            Retries = 4 })
+)
 
 //--------------------------------------------------------------------------------
 // Clean build results
@@ -123,7 +123,7 @@ Target "CleanTests" <| fun _ ->
 //--------------------------------------------------------------------------------
 // Run tests
 
-open XUnit2Helper
+open Fake.Testing
 Target "RunTests" <| fun _ ->  
     let xunitTestAssemblies = !! "src/**/bin/Release/*.Tests.dll" 
 
@@ -132,7 +132,8 @@ Target "RunTests" <| fun _ ->
     let xunitToolPath = findToolInSubPath "xunit.console.exe" "src/packages/xunit.runner.console*/tools"
     printfn "Using XUnit runner: %s" xunitToolPath
     xUnit2
-        (fun p -> { p with OutputDir = testOutput; ToolPath = xunitToolPath })
+        (fun p -> { p with HtmlOutputPath = Some(testOutput @@ "xunit.html")
+                           ForceTeamCity = true })
         xunitTestAssemblies
 
 //--------------------------------------------------------------------------------
@@ -184,13 +185,15 @@ let updateNugetPackages _ =
                     ConfigFile = Some (getConfigFile isPreRelease)
                     Prerelease = true
                     ToolPath = nugetExe
-                    RepositoryPath = "src/Packages"
+                    RepositoryPath = "./src/packages"
                     Ids = getPackages project
                     }) config
 
 Target "UpdateDependencies" <| fun _ ->
     printfn "Invoking updateNugetPackages"
-    updateNugetPackages()
+    match Fake.EnvironmentHelper.isMono with
+    | false -> updateNugetPackages()
+    | true -> () // don't run this function if building with Mono, it doesn't work
 
 //--------------------------------------------------------------------------------
 // Clean nuget directory

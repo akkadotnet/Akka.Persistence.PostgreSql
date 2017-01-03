@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.25123.0
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Persistence.PostgreSql", "Akka.Persistence.PostgreSql\Akka.Persistence.PostgreSql.csproj", "{4B89227B-5AD1-4061-816F-570067C3727F}"
 EndProject
@@ -20,6 +20,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{F945729D
 		..\build.cmd = ..\build.cmd
 		..\build.fsx = ..\build.fsx
 		..\build.sh = ..\build.sh
+		..\start_db_container.sh = ..\start_db_container.sh
+		..\teardown_db_container.sh = ..\teardown_db_container.sh
+		..\wait-for-it.sh = ..\wait-for-it.sh
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{EEDB424A-4F28-4171-99D1-08C8DA880BE6}"
