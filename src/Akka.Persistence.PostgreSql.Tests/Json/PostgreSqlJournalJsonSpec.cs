@@ -1,24 +1,23 @@
 ﻿//-----------------------------------------------------------------------
-// <copyright file="PostgreSqlJournalSpec.cs" company="Akka.NET Project">
+// <copyright file="PostgreSqlJournalJsonSpec.cs" company="Akka.NET Project">
 //     Copyright (C) 2009-2016 Lightbend Inc. <http://www.lightbend.com>
 //     Copyright (C) 2013-2016 Akka.NET project <https://github.com/akkadotnet/akka.net>
 // </copyright>
 //-----------------------------------------------------------------------
 
-using System.Configuration;
 using Akka.Configuration;
 using Akka.Persistence.TestKit.Journal;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Akka.Persistence.PostgreSql.Tests
+namespace Akka.Persistence.PostgreSql.Tests.Json
 {
     [Collection("PostgreSqlSpec")]
-    public class PostgreSqlJournalSpec : JournalSpec
+    public class PostgreSqlJournalJsonSpec : JournalSpec
     {
         private static readonly Config SpecConfig;
 
-        static PostgreSqlJournalSpec() 
+        static PostgreSqlJournalJsonSpec()
         {
             var config = @"
                 akka.persistence {
@@ -32,6 +31,7 @@ namespace Akka.Persistence.PostgreSql.Tests
                             schema-name = public
                             auto-initialize = on
                             connection-string-name = ""TestDb""
+                            stored-as = ""jsonb""
                         }
                     }
                 }";
@@ -42,8 +42,8 @@ namespace Akka.Persistence.PostgreSql.Tests
             DbUtils.Initialize();
         }
 
-        public PostgreSqlJournalSpec(ITestOutputHelper output)
-            : base(SpecConfig, "PostgreSqlJournalSpec", output: output)
+        public PostgreSqlJournalJsonSpec(ITestOutputHelper output)
+            : base(SpecConfig, "PostgreSqlJournalJsonSpec", output: output)
         {
             Initialize();
         }

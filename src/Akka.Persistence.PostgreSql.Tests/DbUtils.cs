@@ -1,7 +1,12 @@
-﻿using System;
+﻿//-----------------------------------------------------------------------
+// <copyright file="DbUtils.cs" company="Akka.NET Project">
+//     Copyright (C) 2009-2016 Lightbend Inc. <http://www.lightbend.com>
+//     Copyright (C) 2013-2016 Akka.NET project <https://github.com/akkadotnet/akka.net>
+// </copyright>
+//-----------------------------------------------------------------------
+
+using System;
 using System.Configuration;
-using System.Data.SqlClient;
-using Akka.Dispatch.SysMsg;
 using Npgsql;
 
 namespace Akka.Persistence.PostgreSql.Tests
@@ -15,7 +20,7 @@ namespace Akka.Persistence.PostgreSql.Tests
 
             //connect to postgres database to create a new database
             var databaseName = connectionBuilder.Database;
-            connectionBuilder.Database = "postgres";
+            connectionBuilder.Database = databaseName;
             connectionString = connectionBuilder.ToString();
 
             using (var conn = new NpgsqlConnection(connectionString))
@@ -34,7 +39,7 @@ namespace Akka.Persistence.PostgreSql.Tests
 
                 if (dbExists)
                 {
-                    DoClean(conn);
+                    Clean();
                 }
                 else
                 {
@@ -71,7 +76,8 @@ namespace Akka.Persistence.PostgreSql.Tests
             {
                 cmd.CommandText = @"
                     DROP TABLE IF EXISTS public.event_journal;
-                    DROP TABLE IF EXISTS public.snapshot_store";
+                    DROP TABLE IF EXISTS public.snapshot_store;
+                    DROP TABLE IF EXISTS public.metadata;";
                 cmd.Connection = conn;
                 cmd.ExecuteNonQuery();
             }
