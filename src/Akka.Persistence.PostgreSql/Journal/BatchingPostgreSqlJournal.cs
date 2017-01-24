@@ -43,6 +43,19 @@ namespace Akka.Persistence.PostgreSql.Journal
                 throw new ConfigurationException($"Value [{storedAsString}] of the 'stored-as' HOCON config key is not valid. Valid values: bytea, json, jsonb.");
             }
 
+            IsolationLevel level;
+            switch (config.GetString("isolation-level", "unspecified"))
+            {
+                case "chaos": level = IsolationLevel.Chaos; break;
+                case "read-committed": level = IsolationLevel.ReadCommitted; break;
+                case "read-uncommitted": level = IsolationLevel.ReadUncommitted; break;
+                case "repeatable-read": level = IsolationLevel.RepeatableRead; break;
+                case "serializable": level = IsolationLevel.Serializable; break;
+                case "snapshot": level = IsolationLevel.Snapshot; break;
+                case "unspecified": level = IsolationLevel.Unspecified; break;
+                default: throw new ArgumentException("Unknown isolation-level value. Should be one of: chaos | read-committed | read-uncommitted | repeatable-read | serializable | snapshot | unspecified");
+            }
+
             return new BatchingPostgresJournalSetup(
                 connectionString: connectionString,
                 maxConcurrentOperations: config.GetInt("max-concurrent-operations", 64),
@@ -50,8 +63,9 @@ namespace Akka.Persistence.PostgreSql.Journal
                 maxBufferSize: config.GetInt("max-buffer-size", 500000),
                 autoInitialize: config.GetBoolean("auto-initialize", false),
                 connectionTimeout: config.GetTimeSpan("connection-timeout", TimeSpan.FromSeconds(30)),
-                circuitBreakerSettings: CircuitBreakerSettings.Create(config.GetConfig("circuit-breaker")),
-                replayFilterSettings: ReplayFilterSettings.Create(config.GetConfig("replay-filter")), 
+                isolationLevel: level,
+                circuitBreakerSettings: new CircuitBreakerSettings(config.GetConfig("circuit-breaker")),
+                replayFilterSettings: new ReplayFilterSettings(config.GetConfig("replay-filter")), 
                 namingConventions: new QueryConfiguration(
                     schemaName: config.GetString("schema-name", "public"),
                     journalEventsTableName: config.GetString("table-name", "event_journal"),
@@ -72,10 +86,8 @@ namespace Akka.Persistence.PostgreSql.Journal
                 });
         }
 
-        public BatchingPostgresJournalSetup(string connectionString, int maxConcurrentOperations, int maxBatchSize, int maxBufferSize, bool autoInitialize,
-            TimeSpan connectionTimeout, CircuitBreakerSettings circuitBreakerSettings, ReplayFilterSettings replayFilterSettings, QueryConfiguration namingConventions, 
-            StoredAsType storedAs, JsonSerializerSettings jsonSerializerSettings = null)
-            : base(connectionString, maxConcurrentOperations, maxBatchSize, maxBufferSize, autoInitialize, connectionTimeout, circuitBreakerSettings, replayFilterSettings, namingConventions)
+        public BatchingPostgresJournalSetup(string connectionString, int maxConcurrentOperations, int maxBatchSize, int maxBufferSize, bool autoInitialize, TimeSpan connectionTimeout, IsolationLevel isolationLevel, CircuitBreakerSettings circuitBreakerSettings, ReplayFilterSettings replayFilterSettings, QueryConfiguration namingConventions, StoredAsType storedAs, JsonSerializerSettings jsonSerializerSettings) 
+            : base(connectionString, maxConcurrentOperations, maxBatchSize, maxBufferSize, autoInitialize, connectionTimeout, isolationLevel, circuitBreakerSettings, replayFilterSettings, namingConventions)
         {
             StoredAs = storedAs;
             JsonSerializerSettings = jsonSerializerSettings;
