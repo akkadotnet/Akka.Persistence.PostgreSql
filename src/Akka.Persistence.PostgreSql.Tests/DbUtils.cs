@@ -5,25 +5,32 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-using System;
-using System.Configuration;
+using Microsoft.Extensions.Configuration;
 using Npgsql;
+using System;
+using System.IO;
 
 namespace Akka.Persistence.PostgreSql.Tests
 {
     public static class DbUtils
     {
+        public static IConfigurationRoot Config { get; private set; }
+        public static string ConnectionString { get; private set; }
+
         public static void Initialize()
         {
-            var connectionString = ConfigurationManager.ConnectionStrings["TestDb"].ConnectionString;
-            var connectionBuilder = new NpgsqlConnectionStringBuilder(connectionString);
+            Config = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory())
+                                               .AddXmlFile("app.xml").Build();
+            ConnectionString = Config.GetSection("connectionStrings:add:TestDb")["connectionString"];
+            Console.WriteLine("Found connectionString {0}", ConnectionString);
+            var connectionBuilder = new NpgsqlConnectionStringBuilder(ConnectionString);
 
             //connect to postgres database to create a new database
             var databaseName = connectionBuilder.Database;
             connectionBuilder.Database = databaseName;
-            connectionString = connectionBuilder.ToString();
+            ConnectionString = connectionBuilder.ToString();
 
-            using (var conn = new NpgsqlConnection(connectionString))
+            using (var conn = new NpgsqlConnection(ConnectionString))
             {
                 conn.Open();
 
@@ -50,9 +57,9 @@ namespace Akka.Persistence.PostgreSql.Tests
 
         public static void Clean()
         {
-            var connectionString = ConfigurationManager.ConnectionStrings["TestDb"].ConnectionString;
+            var connectionBuilder = new NpgsqlConnectionStringBuilder(ConnectionString);
 
-            using (var conn = new NpgsqlConnection(connectionString))
+            using (var conn = new NpgsqlConnection(ConnectionString))
             {
                 conn.Open();
 

@@ -5,11 +5,11 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-using System;
-using System.Data.Common;
 using Akka.Configuration;
 using Akka.Persistence.Sql.Common.Snapshot;
 using Npgsql;
+using System;
+using System.Data.Common;
 
 namespace Akka.Persistence.PostgreSql.Snapshot
 {
@@ -39,7 +39,8 @@ namespace Akka.Persistence.PostgreSql.Snapshot
                 manifestColumnName: "manifest",
                 timestampColumnName: "created_at",
                 timeout: config.GetTimeSpan("connection-timeout"),
-                storedAs: storedAs),
+                storedAs: storedAs,
+                defaultSerializer: "json"),
                     Context.System.Serialization);
 
             SnapshotSettings = new PostgreSqlSnapshotStoreSettings(config);

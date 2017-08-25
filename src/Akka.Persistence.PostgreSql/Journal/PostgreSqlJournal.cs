@@ -5,11 +5,11 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-using System;
-using System.Data.Common;
 using Akka.Configuration;
 using Akka.Persistence.Sql.Common.Journal;
 using Npgsql;
+using System;
+using System.Data.Common;
 
 namespace Akka.Persistence.PostgreSql.Journal
 {
@@ -45,7 +45,8 @@ namespace Akka.Persistence.PostgreSql.Journal
                 tagsColumnName: "tags",
                 orderingColumn: "ordering",
                 timeout: config.GetTimeSpan("connection-timeout"),
-                storedAs: storedAs), 
+                storedAs: storedAs,
+                defaultSerializer: "json"), 
                     Context.System.Serialization,
                     GetTimestampProvider(config.GetString("timestamp-provider")));
 

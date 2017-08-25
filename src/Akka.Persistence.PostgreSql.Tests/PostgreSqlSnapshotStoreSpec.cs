@@ -5,9 +5,8 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-using System.Configuration;
 using Akka.Configuration;
-using Akka.Persistence.TestKit.Snapshot;
+using Akka.Persistence.TCK.Snapshot;
 using Akka.TestKit;
 using Xunit;
 using Xunit.Abstractions;
@@ -21,6 +20,9 @@ namespace Akka.Persistence.PostgreSql.Tests
 
         static PostgreSqlSnapshotStoreSpec()
         {
+            //need to make sure db is created before the tests start
+            DbUtils.Initialize();
+
             var config = @"
                 akka.persistence {
                     publish-plugin-commands = on
@@ -32,15 +34,12 @@ namespace Akka.Persistence.PostgreSql.Tests
                             table-name = snapshot_store
                             schema-name = public
                             auto-initialize = on
-                            connection-string-name = ""TestDb""
+                            connection-string = """ + DbUtils.ConnectionString + @"""
                         }
                     }
                 }";
 
             SpecConfig = ConfigurationFactory.ParseString(config);
-
-            //need to make sure db is created before the tests start
-            DbUtils.Initialize();
         }
 
         public PostgreSqlSnapshotStoreSpec(ITestOutputHelper output)

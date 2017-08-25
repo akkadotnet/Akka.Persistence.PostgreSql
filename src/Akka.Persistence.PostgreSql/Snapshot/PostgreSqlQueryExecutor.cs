@@ -5,15 +5,14 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
+using Akka.Persistence.Sql.Common.Snapshot;
+using Newtonsoft.Json;
+using Npgsql;
+using NpgsqlTypes;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using Akka.Persistence.Sql.Common.Snapshot;
-using Akka.Serialization;
-using Newtonsoft.Json;
-using Npgsql;
-using NpgsqlTypes;
 
 namespace Akka.Persistence.PostgreSql.Snapshot
 {
@@ -123,13 +122,14 @@ namespace Akka.Persistence.PostgreSql.Snapshot
             string timestampColumnName, 
             TimeSpan timeout, 
             StoredAsType storedAs,
+            string defaultSerializer,
             JsonSerializerSettings jsonSerializerSettings = null) 
-            : base(schemaName, snapshotTableName, persistenceIdColumnName, sequenceNrColumnName, payloadColumnName, manifestColumnName, timestampColumnName, timeout)
+            : base(schemaName, snapshotTableName, persistenceIdColumnName, sequenceNrColumnName, payloadColumnName, manifestColumnName, timestampColumnName, timeout, defaultSerializer)
         {
             StoredAs = storedAs;
             JsonSerializerSettings = jsonSerializerSettings ?? new JsonSerializerSettings
             {
-                ContractResolver = new NewtonSoftJsonSerializer.AkkaContractResolver()
+                ContractResolver = new AkkaContractResolver()
             };
         }
     }

@@ -6,31 +6,39 @@
 //-----------------------------------------------------------------------
 
 using Akka.Configuration;
-using Akka.Persistence.Sql.TestKit;
+using Akka.Persistence.Query;
+using Akka.Persistence.Query.Sql;
+using Akka.Persistence.TCK.Query;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Akka.Persistence.PostgreSql.Tests.Query
 {
     [Collection("PostgreSqlSpec")]
-    public class PostgreSqlAllPersistenceIdsSpec : AllPersistenceIdsSpec
+    public class PostgreSqlAllPersistenceIdsSpec : PersistenceIdsSpec
     {
         public static Config SpecConfig => ConfigurationFactory.ParseString($@"
             akka.loglevel = INFO
+            akka.test.single-expect-default = 10s
             akka.persistence.journal.plugin = ""akka.persistence.journal.postgresql""
             akka.persistence.journal.postgresql {{
                 class = ""Akka.Persistence.PostgreSql.Journal.PostgreSqlJournal, Akka.Persistence.PostgreSql""
                 plugin-dispatcher = ""akka.actor.default-dispatcher""
                 table-name = event_journal
                 auto-initialize = on
-                connection-string-name = ""TestDb""
+                connection-string = """ + DbUtils.ConnectionString + @"""
                 refresh-interval = 1s
-            }}
-            akka.test.single-expect-default = 10s");
+            }}")
+            .WithFallback(SqlReadJournal.DefaultConfiguration());
 
-        public PostgreSqlAllPersistenceIdsSpec(ITestOutputHelper output) : base(SpecConfig, output)
+        static PostgreSqlAllPersistenceIdsSpec()
         {
             DbUtils.Initialize();
+        }
+
+        public PostgreSqlAllPersistenceIdsSpec(ITestOutputHelper output) : base(SpecConfig, nameof(PostgreSqlAllPersistenceIdsSpec), output)
+        {
+            ReadJournal = Sys.ReadJournalFor<SqlReadJournal>(SqlReadJournal.Identifier);
         }
 
         protected override void Dispose(bool disposing)
