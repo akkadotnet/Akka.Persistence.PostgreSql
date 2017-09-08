@@ -16,6 +16,7 @@ using System.Collections.Immutable;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 
 namespace Akka.Persistence.PostgreSql.Journal
@@ -104,7 +105,7 @@ namespace Akka.Persistence.PostgreSql.Journal
         private static string QualifiedName(IPersistentRepresentation e)
         {
             var type = e.Payload.GetType();
-            return type.AssemblyQualifiedName;
+            return type.FullName + ", " + type.GetTypeInfo().Assembly.GetName().Name;
         }
 
         protected override IPersistentRepresentation ReadEvent(DbDataReader reader)

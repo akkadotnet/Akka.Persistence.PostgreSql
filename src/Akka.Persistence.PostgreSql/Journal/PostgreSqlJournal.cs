@@ -46,7 +46,7 @@ namespace Akka.Persistence.PostgreSql.Journal
                 orderingColumn: "ordering",
                 timeout: config.GetTimeSpan("connection-timeout"),
                 storedAs: storedAs,
-                defaultSerializer: "json"), 
+                defaultSerializer: config.GetString("serializer")),
                     Context.System.Serialization,
                     GetTimestampProvider(config.GetString("timestamp-provider")));
 

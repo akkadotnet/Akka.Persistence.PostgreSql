@@ -40,7 +40,7 @@ namespace Akka.Persistence.PostgreSql.Snapshot
                 timestampColumnName: "created_at",
                 timeout: config.GetTimeSpan("connection-timeout"),
                 storedAs: storedAs,
-                defaultSerializer: "json"),
+                defaultSerializer: config.GetString("serializer")),
                     Context.System.Serialization);
 
             SnapshotSettings = new PostgreSqlSnapshotStoreSettings(config);
