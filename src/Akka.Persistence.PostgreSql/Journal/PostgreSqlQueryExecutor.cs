@@ -7,6 +7,7 @@
 
 using Akka.Actor;
 using Akka.Persistence.Sql.Common.Journal;
+using Akka.Util;
 using Newtonsoft.Json;
 using Npgsql;
 using NpgsqlTypes;
@@ -16,7 +17,6 @@ using System.Collections.Immutable;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 
 namespace Akka.Persistence.PostgreSql.Journal
@@ -105,7 +105,7 @@ namespace Akka.Persistence.PostgreSql.Journal
         private static string QualifiedName(IPersistentRepresentation e)
         {
             var type = e.Payload.GetType();
-            return type.FullName + ", " + type.GetTypeInfo().Assembly.GetName().Name;
+            return type.TypeQualifiedName();
         }
 
         protected override IPersistentRepresentation ReadEvent(DbDataReader reader)
