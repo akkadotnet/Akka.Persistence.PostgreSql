@@ -38,6 +38,7 @@ namespace Akka.Persistence.PostgreSql.Snapshot
                 payloadColumnName: "payload",
                 manifestColumnName: "manifest",
                 timestampColumnName: "created_at",
+                serializerIdColumnName: "serializer_id",
                 timeout: config.GetTimeSpan("connection-timeout"),
                 storedAs: storedAs,
                 defaultSerializer: config.GetString("serializer")),
