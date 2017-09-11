@@ -19,7 +19,7 @@ while getopts ":i:" opt; do
 						done
 			fi
 			echo "Starting docker container with imageName=$imageName and name=akka-postgres-db"
-			docker run -d --name=akka-postgres-db -l deployer=akkadotnet -e POSTGRES_PASSWORD=postgres $imageName
+			docker run -d --name=akka-postgres-db -p 5432:5432 -l deployer=akkadotnet -e POSTGRES_PASSWORD=postgres $imageName
 			;;
 		:)
 			echo "imageName (-i) argument required" >&2

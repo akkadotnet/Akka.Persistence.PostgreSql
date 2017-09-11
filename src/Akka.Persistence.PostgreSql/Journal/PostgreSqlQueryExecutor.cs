@@ -5,6 +5,12 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
+using Akka.Actor;
+using Akka.Persistence.Sql.Common.Journal;
+using Akka.Util;
+using Newtonsoft.Json;
+using Npgsql;
+using NpgsqlTypes;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -12,12 +18,6 @@ using System.Data;
 using System.Data.Common;
 using System.Linq;
 using System.Text;
-using Akka.Actor;
-using Akka.Persistence.Sql.Common.Journal;
-using Akka.Serialization;
-using Newtonsoft.Json;
-using Npgsql;
-using NpgsqlTypes;
 
 namespace Akka.Persistence.PostgreSql.Journal
 {
@@ -105,7 +105,7 @@ namespace Akka.Persistence.PostgreSql.Journal
         private static string QualifiedName(IPersistentRepresentation e)
         {
             var type = e.Payload.GetType();
-            return type.FullName + ", " + type.Assembly.GetName().Name;
+            return type.TypeQualifiedName();
         }
 
         protected override IPersistentRepresentation ReadEvent(DbDataReader reader)
@@ -142,15 +142,16 @@ namespace Akka.Persistence.PostgreSql.Journal
             string tagsColumnName,
             string orderingColumn,
             TimeSpan timeout,
-            StoredAsType storedAs, 
+            StoredAsType storedAs,
+            string defaultSerializer,
             JsonSerializerSettings jsonSerializerSettings = null)
             : base(schemaName, journalEventsTableName, metaTableName, persistenceIdColumnName, sequenceNrColumnName,
-                  payloadColumnName, manifestColumnName, timestampColumnName, isDeletedColumnName, tagsColumnName, orderingColumn, timeout)
+                  payloadColumnName, manifestColumnName, timestampColumnName, isDeletedColumnName, tagsColumnName, orderingColumn, timeout, defaultSerializer)
         {
             StoredAs = storedAs;
             JsonSerializerSettings = jsonSerializerSettings ?? new JsonSerializerSettings
             {
-                ContractResolver = new NewtonSoftJsonSerializer.AkkaContractResolver()
+                ContractResolver = new AkkaContractResolver()
             };
         }
     }

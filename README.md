@@ -144,3 +144,9 @@ In order to run the tests, you must do the following things:
   1. Username: postgres
   2. Password: postgres
 3. A custom app.config file can be used and needs to be placed in the same folder as the dll
+
+or run postgres in docker
+
+```
+docker run -d --rm --name=akka-postgres-db -p 5432:5432 -l deployer=akkadotnet -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres postgres:9.6
+```

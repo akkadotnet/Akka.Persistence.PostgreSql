@@ -5,9 +5,10 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-using System.Configuration;
 using Akka.Configuration;
-using Akka.Persistence.Sql.TestKit;
+using Akka.Persistence.Query;
+using Akka.Persistence.Query.Sql;
+using Akka.Persistence.TCK.Query;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -24,14 +25,19 @@ namespace Akka.Persistence.PostgreSql.Tests.Query
                 plugin-dispatcher = ""akka.actor.default-dispatcher""
                 table-name = event_journal
                 auto-initialize = on
-                connection-string-name = ""TestDb""
+                connection-string = """ + DbUtils.ConnectionString + @"""
                 refresh-interval = 1s
             }}
             akka.test.single-expect-default = 10s");
 
-        public PostgreSqlEventsByPersistenceIdSpec(ITestOutputHelper output) : base(SpecConfig, output)
+        static PostgreSqlEventsByPersistenceIdSpec()
         {
             DbUtils.Initialize();
+        }
+
+        public PostgreSqlEventsByPersistenceIdSpec(ITestOutputHelper output) : base(SpecConfig, nameof(PostgreSqlEventsByPersistenceIdSpec), output)
+        {
+            ReadJournal = Sys.ReadJournalFor<SqlReadJournal>(SqlReadJournal.Identifier);
         }
 
         protected override void Dispose(bool disposing)

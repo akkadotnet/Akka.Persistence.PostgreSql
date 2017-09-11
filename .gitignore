@@ -214,3 +214,9 @@ resetdev.bat
 
 # FAKE build folder
 .fake/
+
+# VS code stuff
+**/.vscode
+
+# Visual Studio cache
+.vs/
