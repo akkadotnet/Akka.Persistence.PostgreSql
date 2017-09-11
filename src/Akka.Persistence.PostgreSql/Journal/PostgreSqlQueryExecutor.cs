@@ -113,7 +113,15 @@ namespace Akka.Persistence.PostgreSql.Journal
             AddParameter(command, "@Timestamp", DbType.Int64, TimestampProvider.GenerateTimestamp(e));
             AddParameter(command, "@IsDeleted", DbType.Boolean, false);
             AddParameter(command, "@Manifest", DbType.String, manifest);
-            AddParameter(command, "@SerializerId", DbType.Int32, serializer?.Identifier ?? 0);
+
+            if (hasSerializer)
+            {
+                AddParameter(command, "@SerializerId", DbType.Int32, serializer.Identifier);
+            }
+            else
+            {
+                AddParameter(command, "@SerializerId", DbType.Int32, DBNull.Value);
+            }
 
             command.Parameters.Add(new NpgsqlParameter("@Payload", serializationResult.DbType) { Value = serializationResult.Payload });
 
@@ -144,11 +152,17 @@ namespace Akka.Persistence.PostgreSql.Journal
             var isDeleted = reader.GetBoolean(IsDeletedIndex);
             var manifest = reader.GetString(ManifestIndex);
             var raw = reader[PayloadIndex];
-            var type = Type.GetType(manifest, true);
 
             int? serializerId = null;
-            if (!reader.IsDBNull(SerializerIdIndex))
+            Type type = null;
+            if (reader.IsDBNull(SerializerIdIndex))
+            {
+                type = Type.GetType(manifest, true);
+            }
+            else
+            {
                 serializerId = reader.GetInt32(SerializerIdIndex);
+            }
 
             var deserialized = _deserialize(type, raw, manifest, serializerId);
 
