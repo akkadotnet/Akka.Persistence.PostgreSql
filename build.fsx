@@ -333,8 +333,9 @@ Target "Nuget" DoNothing
 // build dependencies
 "Clean" ==> "AssemblyInfo" ==> "RestorePackages" ==> "Build" ==> "BuildRelease"
 
-//
-"BuildRelease" ==> "RunTests"
+// test dependencies
+"RestorePackages" ==> "RunTests"
+"RestorePackages" ==> "RunTestsNetCore"
 
 // nuget dependencies
 "BuildRelease" ==> "CreateNuget"
