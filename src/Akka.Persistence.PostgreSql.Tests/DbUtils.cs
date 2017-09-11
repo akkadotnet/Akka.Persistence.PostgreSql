@@ -22,7 +22,6 @@ namespace Akka.Persistence.PostgreSql.Tests
             Config = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory())
                                                .AddXmlFile("app.xml").Build();
             ConnectionString = Config.GetSection("connectionStrings:add:TestDb")["connectionString"];
-            Console.WriteLine("Found connectionString {0}", ConnectionString);
             var connectionBuilder = new NpgsqlConnectionStringBuilder(ConnectionString);
 
             //connect to postgres database to create a new database
