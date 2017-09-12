@@ -7,12 +7,12 @@
 
 using Akka.Actor;
 using Akka.Persistence.Sql.Common.Journal;
+using Akka.Serialization;
 using Akka.Util;
 using Newtonsoft.Json;
 using Npgsql;
 using NpgsqlTypes;
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Data;
 using System.Data.Common;
@@ -24,8 +24,8 @@ namespace Akka.Persistence.PostgreSql.Journal
     public class PostgreSqlQueryExecutor : AbstractQueryExecutor
     {
         private readonly PostgreSqlQueryConfiguration _configuration;
-        private readonly Func<IPersistentRepresentation, KeyValuePair<NpgsqlDbType, object>> _serialize;
-        private readonly Func<Type, object, object> _deserialize;
+        private readonly Func<IPersistentRepresentation, SerializationResult> _serialize;
+        private readonly Func<Type, object, string, int?, object> _deserialize;
 
         public PostgreSqlQueryExecutor(PostgreSqlQueryConfiguration configuration, Akka.Serialization.Serialization serialization, ITimestampProvider timestampProvider)
             : base(configuration, serialization, timestampProvider)
@@ -43,6 +43,7 @@ namespace Akka.Persistence.PostgreSql.Journal
                     {Configuration.ManifestColumnName} VARCHAR(500) NOT NULL,
                     {Configuration.PayloadColumnName} {storedAs} NOT NULL,
                     {Configuration.TagsColumnName} VARCHAR(100) NULL,
+                    {Configuration.SerializerIdColumnName} INTEGER NULL,
                     CONSTRAINT {Configuration.JournalEventsTableName}_uq UNIQUE ({Configuration.PersistenceIdColumnName}, {Configuration.SequenceNrColumnName})
                 );
                 ";
@@ -57,16 +58,32 @@ namespace Akka.Persistence.PostgreSql.Journal
             switch (_configuration.StoredAs)
             {
                 case StoredAsType.ByteA:
-                    _serialize = e => new KeyValuePair<NpgsqlDbType, object>(NpgsqlDbType.Bytea, Serialization.FindSerializerFor(e.Payload).ToBinary(e.Payload));
-                    _deserialize = (type, serialized) => Serialization.FindSerializerForType(type).FromBinary((byte[])serialized, type);
+                    _serialize = e =>
+                    {
+                        var serializer = Serialization.FindSerializerFor(e.Payload);
+                        return new SerializationResult(NpgsqlDbType.Bytea, serializer.ToBinary(e.Payload), serializer);
+                    };
+                    _deserialize = (type, serialized, manifest, serializerId) =>
+                    {
+                        if (serializerId.HasValue)
+                        {
+                            return Serialization.Deserialize((byte[])serialized, serializerId.Value, manifest);
+                        }
+                        else
+                        {
+                            // Support old writes that did not set the serializer id
+                            var deserializer = Serialization.FindSerializerForType(type, Configuration.DefaultSerializer);
+                            return deserializer.FromBinary((byte[])serialized, type);
+                        }
+                    }; 
                     break;
                 case StoredAsType.JsonB:
-                    _serialize = e => new KeyValuePair<NpgsqlDbType, object>(NpgsqlDbType.Jsonb, JsonConvert.SerializeObject(e.Payload, _configuration.JsonSerializerSettings));
-                    _deserialize = (type, serialized) => JsonConvert.DeserializeObject((string)serialized, type, _configuration.JsonSerializerSettings);
+                    _serialize = e => new SerializationResult(NpgsqlDbType.Jsonb, JsonConvert.SerializeObject(e.Payload, _configuration.JsonSerializerSettings), null);
+                    _deserialize = (type, serialized, manifest, serializerId) => JsonConvert.DeserializeObject((string)serialized, type, _configuration.JsonSerializerSettings);
                     break;
                 case StoredAsType.Json:
-                    _serialize = e => new KeyValuePair<NpgsqlDbType, object>(NpgsqlDbType.Json, JsonConvert.SerializeObject(e.Payload, _configuration.JsonSerializerSettings));
-                    _deserialize = (type, serialized) => JsonConvert.DeserializeObject((string)serialized, type, _configuration.JsonSerializerSettings);
+                    _serialize = e => new SerializationResult(NpgsqlDbType.Json, JsonConvert.SerializeObject(e.Payload, _configuration.JsonSerializerSettings), null);
+                    _deserialize = (type, serialized, manifest, serializerId) => JsonConvert.DeserializeObject((string)serialized, type, _configuration.JsonSerializerSettings);
                     break;
                 default:
                     throw new NotSupportedException($"{_configuration.StoredAs} is not supported Db type for a payload");
@@ -79,15 +96,34 @@ namespace Akka.Persistence.PostgreSql.Journal
 
         protected override void WriteEvent(DbCommand command, IPersistentRepresentation e, IImmutableSet<string> tags)
         {
-            var manifest = string.IsNullOrEmpty(e.Manifest) ? QualifiedName(e) : e.Manifest;
-            var t = _serialize(e);
+            var serializationResult = _serialize(e);
+            var serializer = serializationResult.Serializer;
+            var hasSerializer = serializer != null;
+
+            string manifest = "";
+            if (hasSerializer && serializer is SerializerWithStringManifest)
+                manifest = ((SerializerWithStringManifest)serializer).Manifest(e.Payload);
+            else if (hasSerializer && serializer.IncludeManifest)
+                manifest = QualifiedName(e);
+            else
+                manifest = string.IsNullOrEmpty(e.Manifest) ? QualifiedName(e) : e.Manifest;
 
             AddParameter(command, "@PersistenceId", DbType.String, e.PersistenceId);
             AddParameter(command, "@SequenceNr", DbType.Int64, e.SequenceNr);
             AddParameter(command, "@Timestamp", DbType.Int64, TimestampProvider.GenerateTimestamp(e));
             AddParameter(command, "@IsDeleted", DbType.Boolean, false);
             AddParameter(command, "@Manifest", DbType.String, manifest);
-            command.Parameters.Add(new NpgsqlParameter("@Payload", t.Key) { Value = t.Value });
+
+            if (hasSerializer)
+            {
+                AddParameter(command, "@SerializerId", DbType.Int32, serializer.Identifier);
+            }
+            else
+            {
+                AddParameter(command, "@SerializerId", DbType.Int32, DBNull.Value);
+            }
+
+            command.Parameters.Add(new NpgsqlParameter("@Payload", serializationResult.DbType) { Value = serializationResult.Payload });
 
             if (tags.Count != 0)
             {
@@ -116,9 +152,19 @@ namespace Akka.Persistence.PostgreSql.Journal
             var isDeleted = reader.GetBoolean(IsDeletedIndex);
             var manifest = reader.GetString(ManifestIndex);
             var raw = reader[PayloadIndex];
-            var type = Type.GetType(manifest, true);
 
-            var deserialized = _deserialize(type, raw);
+            int? serializerId = null;
+            Type type = null;
+            if (reader.IsDBNull(SerializerIdIndex))
+            {
+                type = Type.GetType(manifest, true);
+            }
+            else
+            {
+                serializerId = reader.GetInt32(SerializerIdIndex);
+            }
+
+            var deserialized = _deserialize(type, raw, manifest, serializerId);
 
             return new Persistent(deserialized, sequenceNr, persistenceId, manifest, isDeleted, ActorRefs.NoSender, null);
         }
@@ -141,12 +187,13 @@ namespace Akka.Persistence.PostgreSql.Journal
             string isDeletedColumnName,
             string tagsColumnName,
             string orderingColumn,
+            string serializerIdColumnName,
             TimeSpan timeout,
             StoredAsType storedAs,
             string defaultSerializer,
             JsonSerializerSettings jsonSerializerSettings = null)
             : base(schemaName, journalEventsTableName, metaTableName, persistenceIdColumnName, sequenceNrColumnName,
-                  payloadColumnName, manifestColumnName, timestampColumnName, isDeletedColumnName, tagsColumnName, orderingColumn, timeout, defaultSerializer)
+                  payloadColumnName, manifestColumnName, timestampColumnName, isDeletedColumnName, tagsColumnName, orderingColumn, serializerIdColumnName, timeout, defaultSerializer)
         {
             StoredAs = storedAs;
             JsonSerializerSettings = jsonSerializerSettings ?? new JsonSerializerSettings

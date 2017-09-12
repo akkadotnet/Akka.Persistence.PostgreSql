@@ -44,6 +44,7 @@ namespace Akka.Persistence.PostgreSql.Journal
                 isDeletedColumnName: "is_deleted",
                 tagsColumnName: "tags",
                 orderingColumn: "ordering",
+                serializerIdColumnName: "serializer_id",
                 timeout: config.GetTimeSpan("connection-timeout"),
                 storedAs: storedAs,
                 defaultSerializer: config.GetString("serializer")),

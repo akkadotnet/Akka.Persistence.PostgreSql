@@ -112,6 +112,12 @@ CREATE TABLE {your_metadata_table_name} (
 
 ### Migration
 
+#### From 1.1.0 to 1.3.1
+```SQL
+ALTER TABLE {your_journal_table_name} ADD COLUMN serializer_id INTEGER NULL;
+ALTER TABLE {your_snapshot_table_name} ADD COLUMN serializer_id INTEGER NULL;
+```
+
 #### From 1.0.6 to 1.1.0
 ```SQL
 CREATE TABLE {your_metadata_table_name} (
