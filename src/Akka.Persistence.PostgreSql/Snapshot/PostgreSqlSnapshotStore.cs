@@ -5,11 +5,11 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-using System;
-using System.Data.Common;
 using Akka.Configuration;
 using Akka.Persistence.Sql.Common.Snapshot;
 using Npgsql;
+using System;
+using System.Data.Common;
 
 namespace Akka.Persistence.PostgreSql.Snapshot
 {
@@ -38,8 +38,10 @@ namespace Akka.Persistence.PostgreSql.Snapshot
                 payloadColumnName: "payload",
                 manifestColumnName: "manifest",
                 timestampColumnName: "created_at",
+                serializerIdColumnName: "serializer_id",
                 timeout: config.GetTimeSpan("connection-timeout"),
-                storedAs: storedAs),
+                storedAs: storedAs,
+                defaultSerializer: config.GetString("serializer")),
                     Context.System.Serialization);
 
             SnapshotSettings = new PostgreSqlSnapshotStoreSettings(config);

@@ -1,33 +1,23 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.26430.16
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Persistence.PostgreSql", "Akka.Persistence.PostgreSql\Akka.Persistence.PostgreSql.csproj", "{4B89227B-5AD1-4061-816F-570067C3727F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Akka.Persistence.PostgreSql", "Akka.Persistence.PostgreSql\Akka.Persistence.PostgreSql.csproj", "{D49830AC-FA6F-41D9-9A1D-9B653D084524}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Persistence.PostgreSql.Tests", "Akka.Persistence.PostgreSql.Tests\Akka.Persistence.PostgreSql.Tests.csproj", "{2D1812FD-70C0-43EE-9C25-3980E41F30E1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Akka.Persistence.PostgreSql.Tests", "Akka.Persistence.PostgreSql.Tests\Akka.Persistence.PostgreSql.Tests.csproj", "{09984665-D586-4739-8B61-513EC61EA0A5}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{62992F6A-6113-4C82-8A5C-ADE7A83C47B6}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{118AFA68-6532-498C-8037-A6151FD7A655}"
 	ProjectSection(SolutionItems) = preProject
-		.nuget\NuGet.Config = .nuget\NuGet.Config
-		.nuget\NuGet.Dev.Config = .nuget\NuGet.Dev.Config
-		.nuget\NuGet.exe = .nuget\NuGet.exe
-		.nuget\NuGet.targets = .nuget\NuGet.targets
+		common.props = common.props
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{F945729D-A58F-4340-9341-FE45E6EDF3A8}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{CADDD4C2-4EFC-4785-8958-35F50C1A8CEE}"
 	ProjectSection(SolutionItems) = preProject
 		..\build.cmd = ..\build.cmd
 		..\build.fsx = ..\build.fsx
+		..\build.ps1 = ..\build.ps1
 		..\build.sh = ..\build.sh
-		..\start_db_container.sh = ..\start_db_container.sh
-		..\teardown_db_container.sh = ..\teardown_db_container.sh
-		..\wait-for-it.sh = ..\wait-for-it.sh
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{EEDB424A-4F28-4171-99D1-08C8DA880BE6}"
-	ProjectSection(SolutionItems) = preProject
-		..\README.md = ..\README.md
 	EndProjectSection
 EndProject
 Global
@@ -36,16 +26,19 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{4B89227B-5AD1-4061-816F-570067C3727F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4B89227B-5AD1-4061-816F-570067C3727F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4B89227B-5AD1-4061-816F-570067C3727F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4B89227B-5AD1-4061-816F-570067C3727F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2D1812FD-70C0-43EE-9C25-3980E41F30E1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2D1812FD-70C0-43EE-9C25-3980E41F30E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2D1812FD-70C0-43EE-9C25-3980E41F30E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2D1812FD-70C0-43EE-9C25-3980E41F30E1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D49830AC-FA6F-41D9-9A1D-9B653D084524}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D49830AC-FA6F-41D9-9A1D-9B653D084524}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D49830AC-FA6F-41D9-9A1D-9B653D084524}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D49830AC-FA6F-41D9-9A1D-9B653D084524}.Release|Any CPU.Build.0 = Release|Any CPU
+		{09984665-D586-4739-8B61-513EC61EA0A5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{09984665-D586-4739-8B61-513EC61EA0A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{09984665-D586-4739-8B61-513EC61EA0A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{09984665-D586-4739-8B61-513EC61EA0A5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {721169D4-809B-4363-85B6-F30A313BC030}
 	EndGlobalSection
 EndGlobal

@@ -5,9 +5,8 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-using System.Configuration;
 using Akka.Configuration;
-using Akka.Persistence.TestKit.Journal;
+using Akka.Persistence.TCK.Journal;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -20,6 +19,9 @@ namespace Akka.Persistence.PostgreSql.Tests
 
         static PostgreSqlJournalSpec() 
         {
+            //need to make sure db is created before the tests start
+            DbUtils.Initialize();
+
             var config = @"
                 akka.persistence {
                     publish-plugin-commands = on
@@ -31,15 +33,12 @@ namespace Akka.Persistence.PostgreSql.Tests
                             table-name = event_journal
                             schema-name = public
                             auto-initialize = on
-                            connection-string-name = ""TestDb""
+                            connection-string = """ + DbUtils.ConnectionString + @"""
                         }
                     }
                 }";
 
             SpecConfig = ConfigurationFactory.ParseString(config);
-
-            //need to make sure db is created before the tests start
-            DbUtils.Initialize();
         }
 
         public PostgreSqlJournalSpec(ITestOutputHelper output)

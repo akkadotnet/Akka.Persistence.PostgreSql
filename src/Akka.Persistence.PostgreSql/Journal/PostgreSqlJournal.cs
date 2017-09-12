@@ -5,11 +5,11 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-using System;
-using System.Data.Common;
 using Akka.Configuration;
 using Akka.Persistence.Sql.Common.Journal;
 using Npgsql;
+using System;
+using System.Data.Common;
 
 namespace Akka.Persistence.PostgreSql.Journal
 {
@@ -44,8 +44,10 @@ namespace Akka.Persistence.PostgreSql.Journal
                 isDeletedColumnName: "is_deleted",
                 tagsColumnName: "tags",
                 orderingColumn: "ordering",
+                serializerIdColumnName: "serializer_id",
                 timeout: config.GetTimeSpan("connection-timeout"),
-                storedAs: storedAs), 
+                storedAs: storedAs,
+                defaultSerializer: config.GetString("serializer")),
                     Context.System.Serialization,
                     GetTimestampProvider(config.GetString("timestamp-provider")));
 

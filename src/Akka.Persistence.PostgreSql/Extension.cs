@@ -5,10 +5,10 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-using System;
 using Akka.Actor;
 using Akka.Configuration;
 using Akka.Persistence.Sql.Common;
+using System;
 
 namespace Akka.Persistence.PostgreSql
 {
@@ -75,10 +75,11 @@ namespace Akka.Persistence.PostgreSql
 
         public PostgreSqlPersistence(ExtendedActorSystem system)
         {
-            system.Settings.InjectTopLevelFallback(DefaultConfiguration());
+            var defaultConfig = DefaultConfiguration();
+            system.Settings.InjectTopLevelFallback(defaultConfig);
 
-            DefaultJournalConfig = system.Settings.Config.GetConfig(PostgreSqlJournalSettings.JournalConfigPath);
-            DefaultSnapshotConfig = system.Settings.Config.GetConfig(PostgreSqlSnapshotStoreSettings.SnapshotStoreConfigPath);
+            DefaultJournalConfig = defaultConfig.GetConfig(PostgreSqlJournalSettings.JournalConfigPath);
+            DefaultSnapshotConfig = defaultConfig.GetConfig(PostgreSqlSnapshotStoreSettings.SnapshotStoreConfigPath);
         }
     }
 

@@ -5,22 +5,20 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Data.Common;
 using Akka.Persistence.Sql.Common.Snapshot;
-using Akka.Serialization;
 using Newtonsoft.Json;
 using Npgsql;
 using NpgsqlTypes;
+using System;
+using System.Data;
+using System.Data.Common;
 
 namespace Akka.Persistence.PostgreSql.Snapshot
 {
     public class PostgreSqlQueryExecutor : AbstractQueryExecutor
     {
-        private readonly Func<object, KeyValuePair<NpgsqlDbType, object>> _serialize;
-        private readonly Func<Type, object, object> _deserialize;
+        private readonly Func<object, SerializationResult> _serialize;
+        private readonly Func<Type, object, string, int?, object> _deserialize;
         public PostgreSqlQueryExecutor(PostgreSqlQueryConfiguration configuration, Akka.Serialization.Serialization serialization) : base(configuration, serialization)
         {
             CreateSnapshotTableSql = $@"
@@ -34,6 +32,7 @@ namespace Akka.Persistence.PostgreSql.Snapshot
                         {Configuration.TimestampColumnName} BIGINT NOT NULL,
                         {Configuration.ManifestColumnName} VARCHAR(500) NOT NULL,
                         {Configuration.PayloadColumnName} {configuration.StoredAs.ToString().ToUpperInvariant()} NOT NULL,
+                        {Configuration.SerializerIdColumnName} INTEGER NULL,
                         CONSTRAINT {Configuration.SnapshotTableName}_pk PRIMARY KEY ({Configuration.PersistenceIdColumnName}, {Configuration.SequenceNrColumnName})
                     );
                     CREATE INDEX {Configuration.SnapshotTableName}_{Configuration.SequenceNrColumnName}_idx ON {Configuration.FullSnapshotTableName}({Configuration.SequenceNrColumnName});
@@ -56,23 +55,40 @@ namespace Akka.Persistence.PostgreSql.Snapshot
                     {Configuration.SequenceNrColumnName}, 
                     {Configuration.TimestampColumnName}, 
                     {Configuration.ManifestColumnName}, 
-                    {Configuration.PayloadColumnName})
-                SELECT @PersistenceId, @SequenceNr, @Timestamp, @Manifest, @Payload
+                    {Configuration.PayloadColumnName},
+                    {Configuration.SerializerIdColumnName})
+                SELECT @PersistenceId, @SequenceNr, @Timestamp, @Manifest, @Payload, @SerializerId
                 WHERE NOT EXISTS (SELECT * FROM upsert)";
 
             switch (configuration.StoredAs)
             {
                 case StoredAsType.ByteA:
-                    _serialize = e => new KeyValuePair<NpgsqlDbType, object>(NpgsqlDbType.Bytea, serialization.FindSerializerFor(e).ToBinary(e));
-                    _deserialize = (type, serialized) => serialization.FindSerializerForType(type).FromBinary((byte[])serialized, type);
+                    _serialize = ss =>
+                    {
+                        var serializer = Serialization.FindSerializerFor(ss);
+                        return new SerializationResult(NpgsqlDbType.Bytea, serializer.ToBinary(ss), serializer);
+                    };
+                    _deserialize = (type, serialized, manifest, serializerId) =>
+                    {
+                        if (serializerId.HasValue)
+                        {
+                            return Serialization.Deserialize((byte[])serialized, serializerId.Value, manifest);
+                        }
+                        else
+                        {
+                            // Support old writes that did not set the serializer id
+                            var deserializer = Serialization.FindSerializerForType(type, Configuration.DefaultSerializer);
+                            return deserializer.FromBinary((byte[])serialized, type);
+                        }
+                    };
                     break;
                 case StoredAsType.JsonB:
-                    _serialize = e => new KeyValuePair<NpgsqlDbType, object>(NpgsqlDbType.Jsonb, JsonConvert.SerializeObject(e, configuration.JsonSerializerSettings));
-                    _deserialize = (type, serialized) => JsonConvert.DeserializeObject((string)serialized, type, configuration.JsonSerializerSettings);
+                    _serialize = ss => new SerializationResult(NpgsqlDbType.Jsonb, JsonConvert.SerializeObject(ss, configuration.JsonSerializerSettings), null);
+                    _deserialize = (type, serialized, manifest, serializerId) => JsonConvert.DeserializeObject((string)serialized, type, configuration.JsonSerializerSettings);
                     break;
                 case StoredAsType.Json:
-                    _serialize = e => new KeyValuePair<NpgsqlDbType, object>(NpgsqlDbType.Json, JsonConvert.SerializeObject(e, configuration.JsonSerializerSettings));
-                    _deserialize = (type, serialized) => JsonConvert.DeserializeObject((string)serialized, type, configuration.JsonSerializerSettings);
+                    _serialize = ss => new SerializationResult(NpgsqlDbType.Json, JsonConvert.SerializeObject(ss, configuration.JsonSerializerSettings), null);
+                    _deserialize = (type, serialized, manifest, serializerId) => JsonConvert.DeserializeObject((string)serialized, type, configuration.JsonSerializerSettings);
                     break;
                 default:
                     throw new NotSupportedException($"{configuration.StoredAs} is not supported Db type for a payload");
@@ -89,8 +105,8 @@ namespace Akka.Persistence.PostgreSql.Snapshot
         protected override void SetTimestampParameter(DateTime timestamp, DbCommand command) => AddParameter(command, "@Timestamp", DbType.Int64, timestamp.Ticks);
         protected override void SetPayloadParameter(object snapshot, DbCommand command)
         {
-            var t = _serialize(snapshot);
-            command.Parameters.Add(new NpgsqlParameter("@Payload", t.Key) { Value = t.Value });
+            var serializationResult = _serialize(snapshot);
+            command.Parameters.Add(new NpgsqlParameter("@Payload", serializationResult.DbType) { Value = serializationResult.Payload });
         }
 
         protected override SelectedSnapshot ReadSnapshot(DbDataReader reader)
@@ -98,10 +114,23 @@ namespace Akka.Persistence.PostgreSql.Snapshot
             var persistenceId = reader.GetString(0);
             var sequenceNr = reader.GetInt64(1);
             var timestamp = new DateTime(reader.GetInt64(2));
-            var type = Type.GetType(reader.GetString(3), true);
-            var snapshot = _deserialize(type, reader[4]);
-            
-            return new SelectedSnapshot(new SnapshotMetadata(persistenceId, sequenceNr, timestamp), snapshot);
+            var manifest = reader.GetString(3);
+
+            int? serializerId = null;
+            Type type = null;
+            if (reader.IsDBNull(5))
+            {
+                type = Type.GetType(manifest, true);
+            }
+            else
+            {
+                serializerId = reader.GetInt32(5);
+            }
+
+            var snapshot = _deserialize(type, reader[4], manifest, serializerId);
+
+            var metadata = new SnapshotMetadata(persistenceId, sequenceNr, timestamp);
+            return new SelectedSnapshot(metadata, snapshot);
         }
 
         protected override string CreateSnapshotTableSql { get; }
@@ -121,15 +150,17 @@ namespace Akka.Persistence.PostgreSql.Snapshot
             string payloadColumnName, 
             string manifestColumnName, 
             string timestampColumnName, 
+            string serializerIdColumnName,
             TimeSpan timeout, 
             StoredAsType storedAs,
+            string defaultSerializer,
             JsonSerializerSettings jsonSerializerSettings = null) 
-            : base(schemaName, snapshotTableName, persistenceIdColumnName, sequenceNrColumnName, payloadColumnName, manifestColumnName, timestampColumnName, timeout)
+            : base(schemaName, snapshotTableName, persistenceIdColumnName, sequenceNrColumnName, payloadColumnName, manifestColumnName, timestampColumnName, serializerIdColumnName, timeout, defaultSerializer)
         {
             StoredAs = storedAs;
             JsonSerializerSettings = jsonSerializerSettings ?? new JsonSerializerSettings
             {
-                ContractResolver = new NewtonSoftJsonSerializer.AkkaContractResolver()
+                ContractResolver = new AkkaContractResolver()
             };
         }
     }
