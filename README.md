@@ -91,6 +91,7 @@ CREATE TABLE {your_journal_table_name} (
     manifest VARCHAR(500) NOT NULL,
     payload BYTEA NOT NULL,
     tags VARCHAR(100) NULL,
+    serializer_id INTEGER NULL,
     CONSTRAINT {your_journal_table_name}_uq UNIQUE (persistence_id, sequence_nr)
 );
 
@@ -100,6 +101,7 @@ CREATE TABLE {your_snapshot_table_name} (
     created_at BIGINT NOT NULL,
     manifest VARCHAR(500) NOT NULL,
     snapshot BYTEA NOT NULL,
+    serializer_id INTEGER NULL,
     CONSTRAINT {your_snapshot_table_name}_pk PRIMARY KEY (persistence_id, sequence_nr)
 );
 
