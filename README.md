@@ -100,6 +100,7 @@ CREATE TABLE {your_snapshot_table_name} (
     sequence_nr BIGINT NOT NULL,
     created_at BIGINT NOT NULL,
     manifest VARCHAR(500) NOT NULL,
+    payload BYTEA NOT NULL,
     snapshot BYTEA NOT NULL,
     serializer_id INTEGER NULL,
     CONSTRAINT {your_snapshot_table_name}_pk PRIMARY KEY (persistence_id, sequence_nr)
