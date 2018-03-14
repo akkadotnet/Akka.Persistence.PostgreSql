@@ -6,6 +6,8 @@
 //-----------------------------------------------------------------------
 
 using Akka.Persistence.Sql.Common.Snapshot;
+using Akka.Serialization;
+using Akka.Util;
 using Newtonsoft.Json;
 using Npgsql;
 using NpgsqlTypes;
@@ -99,7 +101,7 @@ namespace Akka.Persistence.PostgreSql.Snapshot
 
         protected override DbCommand CreateCommand(DbConnection connection)
         {
-            return ((NpgsqlConnection) connection).CreateCommand();
+            return ((NpgsqlConnection)connection).CreateCommand();
         }
 
         protected override void SetTimestampParameter(DateTime timestamp, DbCommand command) => AddParameter(command, "@Timestamp", DbType.Int64, timestamp.Ticks);
@@ -107,6 +109,25 @@ namespace Akka.Persistence.PostgreSql.Snapshot
         {
             var serializationResult = _serialize(snapshot);
             command.Parameters.Add(new NpgsqlParameter("@Payload", serializationResult.DbType) { Value = serializationResult.Payload });
+        }
+
+        protected override void SetManifestParameters(object snapshot, DbCommand command)
+        {
+            var snapshotType = snapshot.GetType();
+            var serializer = Serialization.FindSerializerForType(snapshotType, Configuration.DefaultSerializer);
+
+            string manifest = "";
+            if (serializer is SerializerWithStringManifest)
+            {
+                manifest = ((SerializerWithStringManifest)serializer).Manifest(snapshot);
+            }
+            else if (!serializer.IncludeManifest)
+            {
+                manifest = snapshotType.TypeQualifiedName();
+            }
+
+            AddParameter(command, "@Manifest", DbType.String, manifest);
+            AddParameter(command, "@SerializerId", DbType.Int32, serializer.Identifier);
         }
 
         protected override SelectedSnapshot ReadSnapshot(DbDataReader reader)
@@ -118,14 +139,12 @@ namespace Akka.Persistence.PostgreSql.Snapshot
 
             int? serializerId = null;
             Type type = null;
-            if (reader.IsDBNull(5))
-            {
-                type = Type.GetType(manifest, true);
-            }
-            else
-            {
+
+            if (!string.IsNullOrEmpty(manifest))
+                type = Type.GetType(manifest, throwOnError: true);
+
+            if (!reader.IsDBNull(5))
                 serializerId = reader.GetInt32(5);
-            }
 
             var snapshot = _deserialize(type, reader[4], manifest, serializerId);
 
@@ -143,18 +162,18 @@ namespace Akka.Persistence.PostgreSql.Snapshot
         public readonly JsonSerializerSettings JsonSerializerSettings;
 
         public PostgreSqlQueryConfiguration(
-            string schemaName, 
-            string snapshotTableName, 
-            string persistenceIdColumnName, 
-            string sequenceNrColumnName, 
-            string payloadColumnName, 
-            string manifestColumnName, 
-            string timestampColumnName, 
+            string schemaName,
+            string snapshotTableName,
+            string persistenceIdColumnName,
+            string sequenceNrColumnName,
+            string payloadColumnName,
+            string manifestColumnName,
+            string timestampColumnName,
             string serializerIdColumnName,
-            TimeSpan timeout, 
+            TimeSpan timeout,
             StoredAsType storedAs,
             string defaultSerializer,
-            JsonSerializerSettings jsonSerializerSettings = null) 
+            JsonSerializerSettings jsonSerializerSettings = null)
             : base(schemaName, snapshotTableName, persistenceIdColumnName, sequenceNrColumnName, payloadColumnName, manifestColumnName, timestampColumnName, serializerIdColumnName, timeout, defaultSerializer)
         {
             StoredAs = storedAs;
