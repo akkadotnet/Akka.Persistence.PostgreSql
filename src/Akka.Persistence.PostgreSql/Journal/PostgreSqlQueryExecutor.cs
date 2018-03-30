@@ -55,6 +55,13 @@ namespace Akka.Persistence.PostgreSql.Journal
                     CONSTRAINT {Configuration.MetaTableName}_pk PRIMARY KEY ({Configuration.PersistenceIdColumnName}, {Configuration.SequenceNrColumnName})
                 );";
 
+            HighestSequenceNrSql = $@"
+                SELECT MAX(u.SeqNr) as SequenceNr 
+                FROM (
+                    SELECT MAX(e.{Configuration.SequenceNrColumnName}) as SeqNr FROM {Configuration.FullJournalTableName} e WHERE e.{Configuration.PersistenceIdColumnName} = @PersistenceId
+                    UNION
+                    SELECT MAX(m.{Configuration.SequenceNrColumnName}) as SeqNr FROM {Configuration.FullMetaTableName} m WHERE m.{Configuration.PersistenceIdColumnName} = @PersistenceId) as u";
+
             switch (_configuration.StoredAs)
             {
                 case StoredAsType.ByteA:
@@ -93,6 +100,7 @@ namespace Akka.Persistence.PostgreSql.Journal
         protected override DbCommand CreateCommand(DbConnection connection) => ((NpgsqlConnection)connection).CreateCommand();
         protected override string CreateEventsJournalSql { get; }
         protected override string CreateMetaTableSql { get; }
+        protected override string HighestSequenceNrSql { get; }
 
         protected override void WriteEvent(DbCommand command, IPersistentRepresentation e, IImmutableSet<string> tags)
         {
