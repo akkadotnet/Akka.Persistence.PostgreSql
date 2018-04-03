@@ -22,7 +22,7 @@ namespace Akka.Persistence.PostgreSql.Snapshot
         public PostgreSqlSnapshotStoreSettings SnapshotSettings { get; }
         public PostgreSqlSnapshotStore(Config snapshotConfig) : base(snapshotConfig)
         {
-            var config = snapshotConfig.WithFallback(Extension.DefaultJournalConfig);
+            var config = snapshotConfig.WithFallback(Extension.DefaultSnapshotConfig);
             StoredAsType storedAs;
             var storedAsString = config.GetString("stored-as");
             if (!Enum.TryParse(storedAsString, true, out storedAs))
