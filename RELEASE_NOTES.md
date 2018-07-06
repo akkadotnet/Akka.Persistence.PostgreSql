@@ -1,4 +1,17 @@
+#### 1.3.8 July 6 2018 ####
+Upgraded to support Akka.NET 1.3.8 and to take advantage of some performance improvements that have been added to Akka.Persistence for loading large snapshots, which you can read more about here: https://github.com/akkadotnet/akka.net/issues/3422
+
+Note that this feature is currently disabled by default in Akka.Persistence.PostgreSql due to https://github.com/AkkaNetContrib/Akka.Persistence.PostgreSql/issues/53
+
 #### 1.3.1 September 11 2017 ####
+Support for Akka.NET 1.3, .NET Standard 1.6, and the first stable RTM release of Akka.Persistence.
+
+Migration from 1.1.0-beta Up**
+The event journal and snapshot store schema has changed with this release.  In order to keep existing stores compatible with this release, you **must** add a column to both stores for `SerializerId` like so:
+```sql
+ALTER TABLE {your_journal_table_name} ADD COLUMN SerializerId INTEGER NULL
+ALTER TABLE {your_snapshot_table_name} ADD COLUMN SerializerId INTEGER NULL
+```
 
 #### 1.1.2 January 2017 ####
 
