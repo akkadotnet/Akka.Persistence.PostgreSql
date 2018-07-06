@@ -2,8 +2,6 @@
 
 Akka Persistence journal and snapshot store backed by PostgreSql database.
 
-**WARNING: Akka.Persistence.PostgreSql plugin is still in beta and it's mechanics described bellow may be still subject to change**.
-
 ### Configuration
 
 Both journal and snapshot store share the same configuration keys (however they resides in separate scopes, so they are definied distinctly for either journal or snapshot store):
