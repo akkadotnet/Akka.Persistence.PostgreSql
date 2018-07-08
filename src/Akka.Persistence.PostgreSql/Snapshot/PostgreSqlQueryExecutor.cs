@@ -173,8 +173,10 @@ namespace Akka.Persistence.PostgreSql.Snapshot
             TimeSpan timeout,
             StoredAsType storedAs,
             string defaultSerializer,
-            JsonSerializerSettings jsonSerializerSettings = null)
-            : base(schemaName, snapshotTableName, persistenceIdColumnName, sequenceNrColumnName, payloadColumnName, manifestColumnName, timestampColumnName, serializerIdColumnName, timeout, defaultSerializer)
+            JsonSerializerSettings jsonSerializerSettings = null,
+            bool useSequentialAccess = true)
+            : base(schemaName, snapshotTableName, persistenceIdColumnName, sequenceNrColumnName, payloadColumnName, 
+                manifestColumnName, timestampColumnName, serializerIdColumnName, timeout, defaultSerializer, useSequentialAccess)
         {
             StoredAs = storedAs;
             JsonSerializerSettings = jsonSerializerSettings ?? new JsonSerializerSettings

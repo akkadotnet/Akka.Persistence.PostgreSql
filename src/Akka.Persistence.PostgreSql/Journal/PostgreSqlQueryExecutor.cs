@@ -191,9 +191,11 @@ namespace Akka.Persistence.PostgreSql.Journal
             TimeSpan timeout,
             StoredAsType storedAs,
             string defaultSerializer,
-            JsonSerializerSettings jsonSerializerSettings = null)
+            JsonSerializerSettings jsonSerializerSettings = null, 
+            bool useSequentialAccess = true)
             : base(schemaName, journalEventsTableName, metaTableName, persistenceIdColumnName, sequenceNrColumnName,
-                  payloadColumnName, manifestColumnName, timestampColumnName, isDeletedColumnName, tagsColumnName, orderingColumn, serializerIdColumnName, timeout, defaultSerializer)
+                  payloadColumnName, manifestColumnName, timestampColumnName, isDeletedColumnName, tagsColumnName, orderingColumn, 
+                serializerIdColumnName, timeout, defaultSerializer, useSequentialAccess)
         {
             StoredAs = storedAs;
             JsonSerializerSettings = jsonSerializerSettings ?? new JsonSerializerSettings
