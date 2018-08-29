@@ -139,12 +139,14 @@ namespace Akka.Persistence.PostgreSql.Snapshot
 
             int? serializerId = null;
             Type type = null;
-
-            if (!string.IsNullOrEmpty(manifest))
-                type = Type.GetType(manifest, throwOnError: true);
-
-            if (!reader.IsDBNull(5))
+            if (reader.IsDBNull(5))
+            {
+                type = Type.GetType(manifest, true);
+            }
+            else
+            {
                 serializerId = reader.GetInt32(5);
+            }
 
             var snapshot = _deserialize(type, reader[4], manifest, serializerId);
 
