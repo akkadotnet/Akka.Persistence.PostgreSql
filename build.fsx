@@ -31,7 +31,7 @@ let outputPerfTests = output @@ "perf"
 let outputBinaries = output @@ "binaries"
 let outputNuGet = output @@ "nuget"
 let outputBinariesNet45 = outputBinaries @@ "net45"
-let outputBinariesNetStandard = outputBinaries @@ "netstandard2.0"
+let outputBinariesNetStandard = outputBinaries @@ "netstandard1.6"
 
 // Read release notes and version
 let buildNumber = environVarOrDefault "BUILD_NUMBER" "0"
@@ -160,7 +160,7 @@ Target "RunTestsNetCore" <| fun _ ->
         let result = ExecProcess(fun info ->
             info.FileName <- "dotnet"
             info.WorkingDirectory <- (Directory.GetParent project).FullName
-            info.Arguments <- (sprintf "xunit -f netcoreapp2.0 -c Release -parallel none -teamcity -xml %s_netcore_xunit.xml" (outputTests @@ fileNameWithoutExt project))) (TimeSpan.FromMinutes 30.)
+            info.Arguments <- (sprintf "xunit -f netcoreapp1.1 -c Release -parallel none -teamcity -xml %s_netcore_xunit.xml" (outputTests @@ fileNameWithoutExt project))) (TimeSpan.FromMinutes 30.)
         
         ResultHandling.failBuildIfXUnitReportedError TestRunnerErrorLevel.DontFailBuild result
 
