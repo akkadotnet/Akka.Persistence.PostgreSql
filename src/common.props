@@ -2,7 +2,7 @@
   <PropertyGroup>
     <Copyright>Copyright © 2013-2017 Akka.NET Team</Copyright>
     <Authors>Akka.NET Team</Authors>
-    <VersionPrefix>1.3.8</VersionPrefix>
+    <VersionPrefix>1.3.9</VersionPrefix>
     <PackageIconUrl>http://getakka.net/images/akkalogo.png</PackageIconUrl>
     <PackageProjectUrl>https://github.com/AkkaNetContrib/Akka.Persistence.PostgreSql</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/AkkaNetContrib/Akka.Persistence.PostgreSql/blob/master/LICENSE</PackageLicenseUrl>
@@ -28,7 +28,8 @@
     </PackageReference>
   </ItemGroup>
   <PropertyGroup>
-    <PackageReleaseNotes>Upgraded to support Akka.NET 1.3.8 and to take advantage of some performance improvements that have been added to Akka.Persistence for loading large snapshots, which you can read more about here: https://github.com/akkadotnet/akka.net/issues/3422
-Note that this feature is currently disabled by default in Akka.Persistence.PostgreSql due to https://github.com/AkkaNetContrib/Akka.Persistence.PostgreSql/issues/53</PackageReleaseNotes>
+    <PackageReleaseNotes>Upgraded for Akka.NET v1.3.9.
+Other Fixes and Improvements**
+[Bugfix: Loading shapshot error](https://github.com/AkkaNetContrib/Akka.Persistence.PostgreSql/issues/57)</PackageReleaseNotes>
   </PropertyGroup>
 </Project>
