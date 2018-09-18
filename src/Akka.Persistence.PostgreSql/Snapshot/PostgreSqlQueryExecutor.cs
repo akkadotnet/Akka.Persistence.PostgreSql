@@ -21,8 +21,11 @@ namespace Akka.Persistence.PostgreSql.Snapshot
     {
         private readonly Func<object, SerializationResult> _serialize;
         private readonly Func<Type, object, string, int?, object> _deserialize;
+        private readonly StoredAsType storedAs;
+
         public PostgreSqlQueryExecutor(PostgreSqlQueryConfiguration configuration, Akka.Serialization.Serialization serialization) : base(configuration, serialization)
         {
+            this.storedAs = configuration.StoredAs;
             CreateSnapshotTableSql = $@"
                 DO
                 $do$
@@ -121,7 +124,7 @@ namespace Akka.Persistence.PostgreSql.Snapshot
             {
                 manifest = ((SerializerWithStringManifest)serializer).Manifest(snapshot);
             }
-            else if (!serializer.IncludeManifest)
+            else if (storedAs == StoredAsType.ByteA ? serializer.IncludeManifest : !serializer.IncludeManifest)
             {
                 manifest = snapshotType.TypeQualifiedName();
             }
