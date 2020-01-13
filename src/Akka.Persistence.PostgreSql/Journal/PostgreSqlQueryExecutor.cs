@@ -93,6 +93,8 @@ namespace Akka.Persistence.PostgreSql.Journal
         protected override DbCommand CreateCommand(DbConnection connection) => ((NpgsqlConnection)connection).CreateCommand();
         protected override string CreateEventsJournalSql { get; }
         protected override string CreateMetaTableSql { get; }
+        // Fetching all distinct persistence IDs takes a long time and is not always necessary
+        protected override string AllPersistenceIdsSql => $@"";
 
         protected override void WriteEvent(DbCommand command, IPersistentRepresentation e, IImmutableSet<string> tags)
         {
