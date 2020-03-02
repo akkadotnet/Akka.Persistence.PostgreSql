@@ -17,12 +17,11 @@ using System.Collections.Immutable;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Akka.Persistence.PostgreSql.Journal
 {
-    using System.Threading;
-    using System.Threading.Tasks;
-
     public class PostgreSqlQueryExecutor : AbstractQueryExecutor
     {
         private readonly PostgreSqlQueryConfiguration _configuration;
