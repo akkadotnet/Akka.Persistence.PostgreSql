@@ -17,10 +17,12 @@ using System.Collections.Immutable;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
-using System.Text;
 
 namespace Akka.Persistence.PostgreSql.Journal
 {
+    using System.Threading;
+    using System.Threading.Tasks;
+
     public class PostgreSqlQueryExecutor : AbstractQueryExecutor
     {
         private readonly PostgreSqlQueryConfiguration _configuration;
@@ -32,7 +34,16 @@ namespace Akka.Persistence.PostgreSql.Journal
         {
             _configuration = configuration;
             var storedAs = configuration.StoredAs.ToString().ToUpperInvariant();
-            
+
+            var allEventColumnNames = $@"
+                e.{Configuration.PersistenceIdColumnName} as PersistenceId, 
+                e.{Configuration.SequenceNrColumnName} as SequenceNr, 
+                e.{Configuration.TimestampColumnName} as Timestamp, 
+                e.{Configuration.IsDeletedColumnName} as IsDeleted, 
+                e.{Configuration.ManifestColumnName} as Manifest, 
+                e.{Configuration.PayloadColumnName} as Payload,
+                e.{Configuration.SerializerIdColumnName} as SerializerId";
+
             CreateEventsJournalSql = $@"
                 CREATE TABLE IF NOT EXISTS {Configuration.FullJournalTableName} (
                     {Configuration.OrderingColumnName} BIGSERIAL NOT NULL PRIMARY KEY,
@@ -42,10 +53,13 @@ namespace Akka.Persistence.PostgreSql.Journal
                     {Configuration.TimestampColumnName} BIGINT NOT NULL,
                     {Configuration.ManifestColumnName} VARCHAR(500) NOT NULL,
                     {Configuration.PayloadColumnName} {storedAs} NOT NULL,
-                    {Configuration.TagsColumnName} VARCHAR(100) NULL,
+                    {Configuration.TagsColumnName} VARCHAR(100)[] NULL,
                     {Configuration.SerializerIdColumnName} INTEGER NULL,
                     CONSTRAINT {Configuration.JournalEventsTableName}_uq UNIQUE ({Configuration.PersistenceIdColumnName}, {Configuration.SequenceNrColumnName})
                 );
+
+                CREATE INDEX IF NOT EXISTS idx_{Configuration.FullJournalTableName.Replace('.', '_')}_{Configuration.TagsColumnName}_gin
+                    ON {Configuration.FullJournalTableName} USING gin ({Configuration.TagsColumnName});
                 ";
 
             CreateMetaTableSql = $@"
@@ -54,6 +68,19 @@ namespace Akka.Persistence.PostgreSql.Journal
                     {Configuration.SequenceNrColumnName} BIGINT NOT NULL,
                     CONSTRAINT {Configuration.MetaTableName}_pk PRIMARY KEY ({Configuration.PersistenceIdColumnName}, {Configuration.SequenceNrColumnName})
                 );";
+
+            HighestTagOrderingSql =
+                $@"
+                SELECT MAX(e.{Configuration.OrderingColumnName}) as Ordering
+                FROM {Configuration.FullJournalTableName} e
+                WHERE e.{Configuration.OrderingColumnName} > @Ordering AND e.{Configuration.TagsColumnName} @> @Tag";
+
+            ByTagSql =
+                $@"
+                SELECT {allEventColumnNames}, e.{Configuration.OrderingColumnName} as Ordering
+                FROM {Configuration.FullJournalTableName} e
+                WHERE e.{Configuration.OrderingColumnName} > @Ordering AND e.{Configuration.TagsColumnName} @> @Tag
+                ORDER BY {Configuration.OrderingColumnName} ASC";
 
             switch (_configuration.StoredAs)
             {
@@ -75,7 +102,7 @@ namespace Akka.Persistence.PostgreSql.Journal
                             var deserializer = Serialization.FindSerializerForType(type, Configuration.DefaultSerializer);
                             return deserializer.FromBinary((byte[])serialized, type);
                         }
-                    }; 
+                    };
                     break;
                 case StoredAsType.JsonB:
                     _serialize = e => new SerializationResult(NpgsqlDbType.Jsonb, JsonConvert.SerializeObject(e.Payload, _configuration.JsonSerializerSettings), null);
@@ -93,6 +120,8 @@ namespace Akka.Persistence.PostgreSql.Journal
         protected override DbCommand CreateCommand(DbConnection connection) => ((NpgsqlConnection)connection).CreateCommand();
         protected override string CreateEventsJournalSql { get; }
         protected override string CreateMetaTableSql { get; }
+        protected override string HighestTagOrderingSql { get; }
+        protected override string ByTagSql { get; }
 
         protected override void WriteEvent(DbCommand command, IPersistentRepresentation e, IImmutableSet<string> tags)
         {
@@ -125,17 +154,61 @@ namespace Akka.Persistence.PostgreSql.Journal
 
             command.Parameters.Add(new NpgsqlParameter("@Payload", serializationResult.DbType) { Value = serializationResult.Payload });
 
-            if (tags.Count != 0)
+            command.Parameters.Add(tags.Count != 0
+                ? new NpgsqlParameter("@Tag", NpgsqlDbType.Array | NpgsqlDbType.Varchar) {Value = tags.ToArray()}
+                : new NpgsqlParameter("@Tag", NpgsqlDbType.Array | NpgsqlDbType.Varchar) {Value = DBNull.Value});
+        }
+
+                /// <summary>
+        /// TBD
+        /// </summary>
+        /// <param name="connection">TBD</param>
+        /// <param name="cancellationToken">TBD</param>
+        /// <param name="tag">TBD</param>
+        /// <param name="fromOffset">TBD</param>
+        /// <param name="toOffset">TBD</param>
+        /// <param name="max">TBD</param>
+        /// <param name="callback">TBD</param>
+        /// <returns>TBD</returns>
+        public override async Task<long> SelectByTagAsync(DbConnection connection, CancellationToken cancellationToken, string tag, long fromOffset, long toOffset, long max,
+            Action<ReplayedTaggedMessage> callback)
+        {
+            using (var command = GetCommand(connection, ByTagSql))
             {
-                var tagBuilder = new StringBuilder(";", tags.Sum(x => x.Length) + tags.Count + 1);
-                foreach (var tag in tags)
+                var take = Math.Min(toOffset - fromOffset, max);
+                command.Parameters.Add(new NpgsqlParameter("@Tag", NpgsqlDbType.Array | NpgsqlDbType.Varchar) { Value =  new[] { tag }});
+                AddParameter(command, "@Ordering", DbType.Int64, fromOffset);
+                AddParameter(command, "@Take", DbType.Int64, take);
+
+                CommandBehavior commandBehavior;
+
+                if (Configuration.UseSequentialAccess)
                 {
-                    tagBuilder.Append(tag).Append(';');
+                    commandBehavior = CommandBehavior.SequentialAccess;
+                }
+                else
+                {
+                    commandBehavior = CommandBehavior.Default;
                 }
 
-                AddParameter(command, "@Tag", DbType.String, tagBuilder.ToString());
+                using (var reader = await command.ExecuteReaderAsync(commandBehavior, cancellationToken))
+                {
+                    while (await reader.ReadAsync(cancellationToken))
+                    {
+                        var persistent = ReadEvent(reader);
+                        var ordering = reader.GetInt64(OrderingIndex);
+                        callback(new ReplayedTaggedMessage(persistent, tag, ordering));
+                    }
+                }
             }
-            else AddParameter(command, "@Tag", DbType.String, DBNull.Value);
+
+            using (var command = GetCommand(connection, HighestTagOrderingSql))
+            {
+                command.Parameters.Add(new NpgsqlParameter("@Tag", NpgsqlDbType.Array | NpgsqlDbType.Varchar) { Value = new[] { tag } });
+                AddParameter(command, "@Ordering", DbType.Int64, fromOffset);
+                var maxOrdering = (await command.ExecuteScalarAsync(cancellationToken)) as long? ?? 0L;
+                return maxOrdering;
+            }
         }
 
         private static string QualifiedName(IPersistentRepresentation e)
@@ -169,7 +242,7 @@ namespace Akka.Persistence.PostgreSql.Journal
             return new Persistent(deserialized, sequenceNr, persistenceId, manifest, isDeleted, ActorRefs.NoSender, null);
         }
     }
-    
+
     public class PostgreSqlQueryConfiguration : QueryConfiguration
     {
         public readonly StoredAsType StoredAs;
@@ -191,10 +264,10 @@ namespace Akka.Persistence.PostgreSql.Journal
             TimeSpan timeout,
             StoredAsType storedAs,
             string defaultSerializer,
-            JsonSerializerSettings jsonSerializerSettings = null, 
+            JsonSerializerSettings jsonSerializerSettings = null,
             bool useSequentialAccess = true)
             : base(schemaName, journalEventsTableName, metaTableName, persistenceIdColumnName, sequenceNrColumnName,
-                  payloadColumnName, manifestColumnName, timestampColumnName, isDeletedColumnName, tagsColumnName, orderingColumn, 
+                  payloadColumnName, manifestColumnName, timestampColumnName, isDeletedColumnName, tagsColumnName, orderingColumn,
                 serializerIdColumnName, timeout, defaultSerializer, useSequentialAccess)
         {
             StoredAs = storedAs;
