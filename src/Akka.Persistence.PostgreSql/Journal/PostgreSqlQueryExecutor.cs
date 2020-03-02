@@ -35,7 +35,7 @@ namespace Akka.Persistence.PostgreSql.Journal
             
             CreateEventsJournalSql = $@"
                 CREATE TABLE IF NOT EXISTS {Configuration.FullJournalTableName} (
-                    {Configuration.OrderingColumnName} BIGSERIAL NOT NULL PRIMARY KEY,
+                    {Configuration.OrderingColumnName} BIGINT NOT NULL GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
                     {Configuration.PersistenceIdColumnName} VARCHAR(255) NOT NULL,
                     {Configuration.SequenceNrColumnName} BIGINT NOT NULL,
                     {Configuration.IsDeletedColumnName} BOOLEAN NOT NULL,

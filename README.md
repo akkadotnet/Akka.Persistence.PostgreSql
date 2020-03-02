@@ -81,7 +81,7 @@ PostgreSql persistence plugin defines a default table schema used for journal, s
 
 ```SQL
 CREATE TABLE {your_journal_table_name} (
-	ordering BIGSERIAL NOT NULL PRIMARY KEY,
+	ordering BIGINT NOT NULL GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     persistence_id VARCHAR(255) NOT NULL,
     sequence_nr BIGINT NOT NULL,
     is_deleted BOOLEAN NOT NULL,
@@ -111,6 +111,11 @@ CREATE TABLE {your_metadata_table_name} (
 ```
 
 ### Migration
+
+#### From x to x
+```SQL
+TODO: Need some help to write this to go from BIGSERIAL PK to IDENTITY PK
+```
 
 #### From 1.1.0 to 1.3.1
 ```SQL
