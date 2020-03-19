@@ -18,6 +18,8 @@ using System.Data;
 using System.Data.Common;
 using System.Linq;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Akka.Persistence.PostgreSql.Journal
 {
@@ -54,6 +56,14 @@ namespace Akka.Persistence.PostgreSql.Journal
                     {Configuration.SequenceNrColumnName} BIGINT NOT NULL,
                     CONSTRAINT {Configuration.MetaTableName}_pk PRIMARY KEY ({Configuration.PersistenceIdColumnName}, {Configuration.SequenceNrColumnName})
                 );";
+            
+            DeleteBatchSql = $@"
+                DELETE FROM {Configuration.FullJournalTableName}
+                WHERE {Configuration.PersistenceIdColumnName} = @PersistenceId AND {Configuration.SequenceNrColumnName} <= @ToSequenceNr;";
+
+            DeleteBatchSqlMetadata = $@"
+                DELETE FROM {Configuration.FullMetaTableName}
+                WHERE {Configuration.PersistenceIdColumnName} = @PersistenceId AND {Configuration.SequenceNrColumnName} <= @ToSequenceNr;";
 
             switch (_configuration.StoredAs)
             {
@@ -93,6 +103,8 @@ namespace Akka.Persistence.PostgreSql.Journal
         protected override DbCommand CreateCommand(DbConnection connection) => ((NpgsqlConnection)connection).CreateCommand();
         protected override string CreateEventsJournalSql { get; }
         protected override string CreateMetaTableSql { get; }
+        protected override string DeleteBatchSql { get; }
+        public string DeleteBatchSqlMetadata { get; }
 
         protected override void WriteEvent(DbCommand command, IPersistentRepresentation e, IImmutableSet<string> tags)
         {
@@ -167,6 +179,50 @@ namespace Akka.Persistence.PostgreSql.Journal
             var deserialized = _deserialize(type, raw, manifest, serializerId);
 
             return new Persistent(deserialized, sequenceNr, persistenceId, manifest, isDeleted, ActorRefs.NoSender, null);
+        }
+        
+        public override async Task DeleteBatchAsync(DbConnection connection, CancellationToken cancellationToken, string persistenceId, long toSequenceNr)
+        {
+            using (var deleteCommand = GetCommand(connection, DeleteBatchSql))
+            using(var deleteMetadataCommand = GetCommand(connection, DeleteBatchSqlMetadata))
+            using (var highestSeqNrCommand = GetCommand(connection, HighestSequenceNrSql))
+            {
+                AddParameter(highestSeqNrCommand, "@PersistenceId", DbType.String, persistenceId);
+
+                AddParameter(deleteCommand, "@PersistenceId", DbType.String, persistenceId);
+                AddParameter(deleteCommand, "@ToSequenceNr", DbType.Int64, toSequenceNr);
+                
+                AddParameter(deleteMetadataCommand, "@PersistenceId", DbType.String, persistenceId);
+                AddParameter(deleteMetadataCommand, "@ToSequenceNr", DbType.Int64, toSequenceNr);
+
+                using (var tx = connection.BeginTransaction())
+                {
+                    deleteCommand.Transaction = tx;
+                    deleteMetadataCommand.Transaction = tx;
+                    highestSeqNrCommand.Transaction = tx;
+
+                    var res = await highestSeqNrCommand.ExecuteScalarAsync(cancellationToken);
+                    var highestSeqNr = res is long ? Convert.ToInt64(res) : 0L;
+
+                    await deleteCommand.ExecuteNonQueryAsync(cancellationToken);
+                    await deleteMetadataCommand.ExecuteNonQueryAsync(cancellationToken);
+
+                    if (highestSeqNr <= toSequenceNr)
+                    {
+                        using (var updateCommand = GetCommand(connection, UpdateSequenceNrSql))
+                        {
+                            updateCommand.Transaction = tx;
+
+                            AddParameter(updateCommand, "@PersistenceId", DbType.String, persistenceId);
+                            AddParameter(updateCommand, "@SequenceNr", DbType.Int64, highestSeqNr);
+
+                            await updateCommand.ExecuteNonQueryAsync(cancellationToken);
+                            tx.Commit();
+                        }
+                    }
+                    else tx.Commit();
+                }
+            }
         }
     }
     

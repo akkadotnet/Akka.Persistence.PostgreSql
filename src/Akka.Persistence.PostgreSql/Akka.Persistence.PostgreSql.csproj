@@ -4,7 +4,7 @@
   <PropertyGroup>
     <AssemblyTitle>Akka.Persistence.PostgreSql</AssemblyTitle>
     <Description>Akka Persistence journal and snapshot store backed by PostgreSql database.</Description>
-    <TargetFrameworks>net45;netstandard1.6</TargetFrameworks>
+    <TargetFramework>netstandard1.6</TargetFramework>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NetStandardImplicitPackageVersion Condition=" '$(TargetFramework)' == 'netstandard1.6' ">1.6.1</NetStandardImplicitPackageVersion>
   </PropertyGroup>
