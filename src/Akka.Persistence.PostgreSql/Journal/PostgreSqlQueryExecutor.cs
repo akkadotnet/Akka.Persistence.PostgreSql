@@ -148,7 +148,7 @@ namespace Akka.Persistence.PostgreSql.Journal
         {
             var persistenceId = reader.GetString(PersistenceIdIndex);
             var sequenceNr = reader.GetInt64(SequenceNrIndex);
-            //var timestamp = reader.GetDateTime(TimestampIndex);
+            var timestamp = reader.GetInt64(TimestampIndex);
             var isDeleted = reader.GetBoolean(IsDeletedIndex);
             var manifest = reader.GetString(ManifestIndex);
             var raw = reader[PayloadIndex];
@@ -166,7 +166,7 @@ namespace Akka.Persistence.PostgreSql.Journal
 
             var deserialized = _deserialize(type, raw, manifest, serializerId);
 
-            return new Persistent(deserialized, sequenceNr, persistenceId, manifest, isDeleted, ActorRefs.NoSender, null);
+            return new Persistent(deserialized, sequenceNr, persistenceId, manifest, isDeleted, ActorRefs.NoSender, null,timestamp);
         }
     }
     

@@ -68,5 +68,7 @@ namespace Akka.Persistence.PostgreSql.Tests
             Assert.Equal(md.SequenceNr, result.Snapshot.Metadata.SequenceNr);
             // metadata timestamp may have been changed
         }
+        
+        protected override bool SupportsSerialization { get; } = false;
     }
 }

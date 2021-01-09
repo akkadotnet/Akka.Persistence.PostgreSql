@@ -53,5 +53,7 @@ namespace Akka.Persistence.PostgreSql.Tests.Json
             base.Dispose(disposing);
             DbUtils.Clean();
         }
+        
+        protected override bool SupportsSerialization { get; } = false;
     }
 }
