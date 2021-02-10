@@ -38,6 +38,9 @@ namespace Akka.Persistence.PostgreSql.Tests.Json
                 }");
         }
 
+        // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
+        protected override bool SupportsSerialization => false;
+
         public PostgreSqlJournalJsonSpec(ITestOutputHelper output, PostgresFixture fixture)
             : base(Initialize(fixture), "PostgreSqlJournalJsonSpec", output: output)
         {

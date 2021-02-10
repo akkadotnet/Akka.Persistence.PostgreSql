@@ -8,13 +8,11 @@
 
   <ItemGroup>
     <PackageReference Include="Docker.DotNet" Version="3.125.2" />
-    <PackageReference Include="Akka.Persistence.Sql.Common" Version="$(AkkaVersion)" />
     <PackageReference Include="Akka.Persistence.Sql.TestKit" Version="$(AkkaVersion)" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(TestSdkVersion)" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="1.1.2" />
     <PackageReference Include="Npgsql" Version="$(PostgresVersion)" />
     <PackageReference Include="xunit" Version="$(XunitVersion)" />
-    <DotNetCliToolReference Include="dotnet-xunit" Version="$(XunitVersion)" />
     <PackageReference Include="xunit.runner.visualstudio" Version="$(XunitVersion)" />
   </ItemGroup>
 

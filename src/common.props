@@ -12,28 +12,15 @@
     <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
   <PropertyGroup>
-    <XunitVersion>2.3.1</XunitVersion>
-    <AkkaVersion>1.3.9</AkkaVersion>
+    <XunitVersion>2.4.1</XunitVersion>
+    <AkkaVersion>1.4.16</AkkaVersion>
     <PostgresVersion>3.2.5</PostgresVersion>
+    <NetStandardLibVersion>netstandard2.0</NetStandardLibVersion>
     <NetFrameworkVersion>net45</NetFrameworkVersion>
     <TestSdkVersion>15.3.0</TestSdkVersion>
-    <NetCoreTestVersion>netcoreapp1.1</NetCoreTestVersion>
-    <NetFrameworkTestVersion>net452</NetFrameworkTestVersion>
-    <NetStandardLibVersion>netstandard1.6</NetStandardLibVersion>
+    <NetCoreTestVersion>netcoreapp3.1</NetCoreTestVersion>
+    <NetFrameworkTestVersion>net471</NetFrameworkTestVersion>
   </PropertyGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">
-    <Reference Include="System.Data" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.6'">
-    <PackageReference Include="System.Data.SqlClient">
-      <Version>4.3.0</Version>
-    </PackageReference>
-  </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp1.1'">
-    <PackageReference Include="System.Data.SqlClient">
-      <Version>4.3.0</Version>
-    </PackageReference>
-  </ItemGroup>
   <PropertyGroup>
     <PackageReleaseNotes>Upgraded for Akka.NET v1.3.9.
 Other Fixes and Improvements**

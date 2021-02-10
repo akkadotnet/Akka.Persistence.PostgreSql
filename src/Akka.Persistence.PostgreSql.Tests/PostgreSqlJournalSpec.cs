@@ -39,6 +39,9 @@ namespace Akka.Persistence.PostgreSql.Tests
             return ConfigurationFactory.ParseString(config);
         }
 
+        // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
+        protected override bool SupportsSerialization => false;
+
         public PostgreSqlJournalSpec(ITestOutputHelper output, PostgresFixture fixture)
             : base(Initialize(fixture), "PostgreSqlJournalSpec", output: output)
         {
