@@ -5,11 +5,11 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-using Akka.Configuration;
-using Akka.Persistence.Sql.Common.Journal;
 using Npgsql;
 using System;
 using System.Data.Common;
+using Akka.Configuration;
+using Akka.Persistence.Sql.Common.Journal;
 
 namespace Akka.Persistence.PostgreSql.Journal
 {
