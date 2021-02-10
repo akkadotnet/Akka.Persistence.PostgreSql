@@ -12,7 +12,6 @@
     <PackageReference Include="Akka.Persistence.Sql.TestKit" Version="$(AkkaVersion)" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(TestSdkVersion)" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="1.1.2" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Xml" Version="1.1.2" />
     <PackageReference Include="Npgsql" Version="$(PostgresVersion)" />
     <PackageReference Include="xunit" Version="$(XunitVersion)" />
     <DotNetCliToolReference Include="dotnet-xunit" Version="$(XunitVersion)" />
@@ -21,12 +20,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Akka.Persistence.PostgreSql\Akka.Persistence.PostgreSql.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="app.xml">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 
 </Project>

@@ -15,15 +15,13 @@ namespace Akka.Persistence.PostgreSql.Tests.Json
     [Collection("PostgreSqlSpec")]
     public class PostgreSqlJournalJsonSpec : JournalSpec
     {
-        private static readonly Config SpecConfig;
-
-        static PostgreSqlJournalJsonSpec()
+        private static Config Initialize(PostgresFixture fixture)
         {
             //need to make sure db is created before the tests start
-            DbUtils.Initialize();
+            DbUtils.Initialize(fixture);
 
-            var config = @"
-                akka.persistence {
+            return ConfigurationFactory.ParseString(@"
+            akka.persistence {
                     publish-plugin-commands = on
                     journal {
                         plugin = ""akka.persistence.journal.postgresql""
@@ -37,13 +35,11 @@ namespace Akka.Persistence.PostgreSql.Tests.Json
                             stored-as = ""jsonb""
                         }
                     }
-                }";
-
-            SpecConfig = ConfigurationFactory.ParseString(config);
+                }");
         }
 
-        public PostgreSqlJournalJsonSpec(ITestOutputHelper output)
-            : base(SpecConfig, "PostgreSqlJournalJsonSpec", output: output)
+        public PostgreSqlJournalJsonSpec(ITestOutputHelper output, PostgresFixture fixture)
+            : base(Initialize(fixture), "PostgreSqlJournalJsonSpec", output: output)
         {
             Initialize();
         }

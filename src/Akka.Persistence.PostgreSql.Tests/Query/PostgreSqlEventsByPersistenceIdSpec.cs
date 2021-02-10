@@ -17,7 +17,12 @@ namespace Akka.Persistence.PostgreSql.Tests.Query
     [Collection("PostgreSqlSpec")]
     public class PostgreSqlEventsByPersistenceIdSpec : EventsByPersistenceIdSpec
     {
-        public static Config SpecConfig => ConfigurationFactory.ParseString($@"
+        private static Config Initialize(PostgresFixture fixture)
+        {
+            //need to make sure db is created before the tests start
+            DbUtils.Initialize(fixture);
+
+            return ConfigurationFactory.ParseString($@"
             akka.loglevel = INFO
             akka.persistence.journal.plugin = ""akka.persistence.journal.postgresql""
             akka.persistence.journal.postgresql {{
@@ -29,13 +34,10 @@ namespace Akka.Persistence.PostgreSql.Tests.Query
                 refresh-interval = 1s
             }}
             akka.test.single-expect-default = 10s");
-
-        static PostgreSqlEventsByPersistenceIdSpec()
-        {
-            DbUtils.Initialize();
         }
 
-        public PostgreSqlEventsByPersistenceIdSpec(ITestOutputHelper output) : base(SpecConfig, nameof(PostgreSqlEventsByPersistenceIdSpec), output)
+        public PostgreSqlEventsByPersistenceIdSpec(ITestOutputHelper output, PostgresFixture fixture)
+            : base(Initialize(fixture), nameof(PostgreSqlEventsByPersistenceIdSpec), output)
         {
             ReadJournal = Sys.ReadJournalFor<SqlReadJournal>(SqlReadJournal.Identifier);
         }

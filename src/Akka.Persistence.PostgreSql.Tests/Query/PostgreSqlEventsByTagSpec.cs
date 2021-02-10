@@ -20,7 +20,12 @@ namespace Akka.Persistence.PostgreSql.Tests.Query
     [Collection("PostgreSqlSpec")]
     public class PostgreSqlEventsByTagSpec : EventsByTagSpec
     {
-        public static Config SpecConfig => ConfigurationFactory.ParseString($@"
+        private static Config Initialize(PostgresFixture fixture)
+        {
+            //need to make sure db is created before the tests start
+            DbUtils.Initialize(fixture);
+
+            return ConfigurationFactory.ParseString($@"
             akka.loglevel = DEBUG
             akka.persistence.journal.plugin = ""akka.persistence.journal.postgresql""
             akka.persistence.journal.postgresql {{
@@ -38,14 +43,10 @@ namespace Akka.Persistence.PostgreSql.Tests.Query
                 refresh-interval = 1s
             }}
             akka.test.single-expect-default = 10s");
-
-
-        static PostgreSqlEventsByTagSpec()
-        {
-            DbUtils.Initialize();
         }
 
-        public PostgreSqlEventsByTagSpec(ITestOutputHelper output) : base(SpecConfig, nameof(PostgreSqlEventsByTagSpec), output)
+        public PostgreSqlEventsByTagSpec(ITestOutputHelper output, PostgresFixture fixture)
+            : base(Initialize(fixture), nameof(PostgreSqlEventsByTagSpec), output)
         {
             ReadJournal = Sys.ReadJournalFor<SqlReadJournal>(SqlReadJournal.Identifier);
         }
