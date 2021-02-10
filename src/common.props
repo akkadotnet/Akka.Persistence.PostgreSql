@@ -13,6 +13,13 @@
   </PropertyGroup>
   <PropertyGroup>
     <XunitVersion>2.3.1</XunitVersion>
+    <AkkaVersion>1.3.9</AkkaVersion>
+    <PostgresVersion>3.2.5</PostgresVersion>
+    <NetFrameworkVersion>net45</NetFrameworkVersion>
+    <TestSdkVersion>15.3.0</TestSdkVersion>
+    <NetCoreTestVersion>netcoreapp1.1</NetCoreTestVersion>
+    <NetFrameworkTestVersion>net452</NetFrameworkTestVersion>
+    <NetStandardLibVersion>netstandard1.6</NetStandardLibVersion>
   </PropertyGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">
     <Reference Include="System.Data" />
