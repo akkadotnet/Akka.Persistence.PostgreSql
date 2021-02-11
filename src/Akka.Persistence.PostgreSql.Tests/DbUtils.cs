@@ -5,23 +5,18 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-using Microsoft.Extensions.Configuration;
 using Npgsql;
 using System;
-using System.IO;
 
 namespace Akka.Persistence.PostgreSql.Tests
 {
     public static class DbUtils
     {
-        public static IConfigurationRoot Config { get; private set; }
         public static string ConnectionString { get; private set; }
 
-        public static void Initialize()
+        public static void Initialize(PostgresFixture fixture)
         {
-            Config = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory())
-                                               .AddXmlFile("app.xml").Build();
-            ConnectionString = Config.GetSection("connectionStrings:add:TestDb")["connectionString"];
+            ConnectionString = fixture.ConnectionString;
             var connectionBuilder = new NpgsqlConnectionStringBuilder(ConnectionString);
 
             //connect to postgres database to create a new database
@@ -36,7 +31,7 @@ namespace Akka.Persistence.PostgreSql.Tests
                 bool dbExists;
                 using (var cmd = new NpgsqlCommand())
                 {
-                    cmd.CommandText = string.Format(@"SELECT TRUE FROM pg_database WHERE datname='{0}'", databaseName);
+                    cmd.CommandText = $@"SELECT TRUE FROM pg_database WHERE datname='{databaseName}'";
                     cmd.Connection = conn;
 
                     var result = cmd.ExecuteScalar();
@@ -56,8 +51,6 @@ namespace Akka.Persistence.PostgreSql.Tests
 
         public static void Clean()
         {
-            var connectionBuilder = new NpgsqlConnectionStringBuilder(ConnectionString);
-
             using (var conn = new NpgsqlConnection(ConnectionString))
             {
                 conn.Open();
@@ -70,7 +63,7 @@ namespace Akka.Persistence.PostgreSql.Tests
         {
             using (var cmd = new NpgsqlCommand())
             {
-                cmd.CommandText = string.Format(@"CREATE DATABASE {0}", databaseName);
+                cmd.CommandText = $@"CREATE DATABASE {databaseName}";
                 cmd.Connection = conn;
                 cmd.ExecuteNonQuery();
             }

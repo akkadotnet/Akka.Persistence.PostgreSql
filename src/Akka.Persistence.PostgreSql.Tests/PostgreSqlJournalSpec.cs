@@ -15,12 +15,10 @@ namespace Akka.Persistence.PostgreSql.Tests
     [Collection("PostgreSqlSpec")]
     public class PostgreSqlJournalSpec : JournalSpec
     {
-        private static readonly Config SpecConfig;
-
-        static PostgreSqlJournalSpec() 
+        private static Config Initialize(PostgresFixture fixture) 
         {
             //need to make sure db is created before the tests start
-            DbUtils.Initialize();
+            DbUtils.Initialize(fixture);
 
             var config = @"
                 akka.persistence {
@@ -38,11 +36,14 @@ namespace Akka.Persistence.PostgreSql.Tests
                     }
                 }";
 
-            SpecConfig = ConfigurationFactory.ParseString(config);
+            return ConfigurationFactory.ParseString(config);
         }
 
-        public PostgreSqlJournalSpec(ITestOutputHelper output)
-            : base(SpecConfig, "PostgreSqlJournalSpec", output: output)
+        // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
+        protected override bool SupportsSerialization => false;
+
+        public PostgreSqlJournalSpec(ITestOutputHelper output, PostgresFixture fixture)
+            : base(Initialize(fixture), "PostgreSqlJournalSpec", output: output)
         {
             Initialize();
         }

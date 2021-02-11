@@ -28,5 +28,7 @@ jobs:
       name: 'linux_pr'
       displayName: 'Linux PR Validation'
       vmImage: 'ubuntu-16.04'
-      scriptFileName: ./build.sh
-      scriptArgs: RunTests
+      scriptFileName: './build.sh'
+      scriptArgs: RunTestsNetCore
+      outputDirectory: 'TestResults'
+      artifactName: 'net_core_tests-$(Build.BuildId)'
