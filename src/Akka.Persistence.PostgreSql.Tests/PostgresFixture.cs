@@ -112,14 +112,6 @@ namespace Akka.Persistence.PostgreSql.Tests
             // Provide a 10 second startup delay
             await Task.Delay(TimeSpan.FromSeconds(10));
 
-            /*
-            var connectionString = new DbConnectionStringBuilder
-            {
-                ConnectionString =
-                    "data source=.;database=akka_persistence_tests;user id=sa;password=l0lTh1sIsOpenSource"
-            };
-            connectionString["Data Source"] = $"localhost,{sqlServerHostPort}";
-            */
             ConnectionString = $"Server=127.0.0.1;Port={sqlServerHostPort};" +
                                "Database=postgres;User Id=postgres;Password=postgres";
         }
