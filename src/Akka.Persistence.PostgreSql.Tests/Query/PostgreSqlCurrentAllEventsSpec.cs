@@ -33,7 +33,8 @@ namespace Akka.Persistence.PostgreSql.Tests.Query
                 auto-initialize = on
                 connection-string = ""{DbUtils.ConnectionString}""
                 refresh-interval = 1s
-            }}")
+            }}
+            akka.test.single-expect-default = 15s")
                 .WithFallback(PostgreSqlPersistence.DefaultConfiguration())
                 .WithFallback(SqlReadJournal.DefaultConfiguration())
                 .WithFallback(Persistence.DefaultConfig());

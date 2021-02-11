@@ -42,8 +42,10 @@ namespace Akka.Persistence.PostgreSql.Tests.Query
                 connection-string = """ + DbUtils.ConnectionString + @"""
                 refresh-interval = 1s
             }}
-            akka.test.single-expect-default = 10s")
-                .WithFallback(SqlReadJournal.DefaultConfiguration());
+            akka.test.single-expect-default = 15s")
+                .WithFallback(PostgreSqlPersistence.DefaultConfiguration())
+                .WithFallback(SqlReadJournal.DefaultConfiguration())
+                .WithFallback(Persistence.DefaultConfig());
         }
 
         public PostgreSqlCurrentEventsByTagSpec(ITestOutputHelper output, PostgresFixture fixture)
