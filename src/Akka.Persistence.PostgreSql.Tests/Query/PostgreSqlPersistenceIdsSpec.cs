@@ -1,5 +1,5 @@
 ﻿//-----------------------------------------------------------------------
-// <copyright file="PostgreSqlAllPersistenceIdsSpec.cs" company="Akka.NET Project">
+// <copyright file="PostgreSqlPersistenceIdsSpec.cs" company="Akka.NET Project">
 //     Copyright (C) 2009-2016 Lightbend Inc. <http://www.lightbend.com>
 //     Copyright (C) 2013-2016 Akka.NET project <https://github.com/akkadotnet/akka.net>
 // </copyright>
@@ -15,7 +15,7 @@ using Xunit.Abstractions;
 namespace Akka.Persistence.PostgreSql.Tests.Query
 {
     [Collection("PostgreSqlSpec")]
-    public class PostgreSqlAllPersistenceIdsSpec : PersistenceIdsSpec
+    public class PostgreSqlPersistenceIdsSpec : PersistenceIdsSpec
     {
         private static Config Initialize(PostgresFixture fixture)
         {
@@ -34,11 +34,13 @@ namespace Akka.Persistence.PostgreSql.Tests.Query
                 connection-string = ""{DbUtils.ConnectionString}""
                 refresh-interval = 1s
             }}")
-                .WithFallback(SqlReadJournal.DefaultConfiguration());
+                .WithFallback(PostgreSqlPersistence.DefaultConfiguration())
+                .WithFallback(SqlReadJournal.DefaultConfiguration())
+                .WithFallback(Persistence.DefaultConfig());
         }
 
-        public PostgreSqlAllPersistenceIdsSpec(ITestOutputHelper output, PostgresFixture fixture) 
-            : base(Initialize(fixture), nameof(PostgreSqlAllPersistenceIdsSpec), output)
+        public PostgreSqlPersistenceIdsSpec(ITestOutputHelper output, PostgresFixture fixture) 
+            : base(Initialize(fixture), nameof(PostgreSqlPersistenceIdsSpec), output)
         {
             ReadJournal = Sys.ReadJournalFor<SqlReadJournal>(SqlReadJournal.Identifier);
         }
