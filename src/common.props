@@ -13,11 +13,12 @@
   </PropertyGroup>
   <PropertyGroup>
     <XunitVersion>2.4.1</XunitVersion>
+    <XunitRunnerVersion>2.4.3</XunitRunnerVersion>
     <AkkaVersion>1.4.16</AkkaVersion>
-    <PostgresVersion>3.2.5</PostgresVersion>
+    <PostgresVersion>5.0.3</PostgresVersion>
     <NetStandardLibVersion>netstandard2.0</NetStandardLibVersion>
     <NetFrameworkVersion>net45</NetFrameworkVersion>
-    <TestSdkVersion>15.3.0</TestSdkVersion>
+    <TestSdkVersion>16.8.3</TestSdkVersion>
     <NetCoreTestVersion>netcoreapp3.1</NetCoreTestVersion>
     <NetFrameworkTestVersion>net471</NetFrameworkTestVersion>
   </PropertyGroup>

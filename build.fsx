@@ -359,7 +359,7 @@ Target "All" DoNothing
 Target "Nuget" DoNothing
 
 // build dependencies
-"Clean" ==> "AssemblyInfo" ==> "RestorePackages" ==> "Build"
+"Clean" ==> "AssemblyInfo" ==> "Build"
 "Build" ==> "BuildRelease"
 
 // test dependencies
