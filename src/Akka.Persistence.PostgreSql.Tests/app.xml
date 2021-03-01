@@ -1,7 +1,0 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
-<configuration>
-  <connectionStrings>
-     <add name="TestDb" connectionString="Server=db;Port=5432;Database=postgres;User Id=postgres;Password=postgres;" />
-     <!--<add name="TestDb" connectionString="Server=127.0.0.1;Port=5432;Database=postgres;User Id=postgres;Password=postgres;" />-->
-    </connectionStrings>
-</configuration>

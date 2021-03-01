@@ -6,16 +6,19 @@
 //-----------------------------------------------------------------------
 
 using Akka.Configuration;
+using Akka.Persistence.Journal;
 using Akka.Persistence.Query;
 using Akka.Persistence.Query.Sql;
 using Akka.Persistence.TCK.Query;
+using System.Collections.Immutable;
+using System.Linq;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Akka.Persistence.PostgreSql.Tests.Query
 {
     [Collection("PostgreSqlSpec")]
-    public class PostgreSqlEventsByTagSpec : EventsByTagSpec
+    public class PostgreSqlCurrentEventsByTagSpec : CurrentEventsByTagSpec
     {
         private static Config Initialize(PostgresFixture fixture)
         {
@@ -43,11 +46,10 @@ namespace Akka.Persistence.PostgreSql.Tests.Query
                 .WithFallback(PostgreSqlPersistence.DefaultConfiguration())
                 .WithFallback(SqlReadJournal.DefaultConfiguration())
                 .WithFallback(Persistence.DefaultConfig());
-
         }
 
-        public PostgreSqlEventsByTagSpec(ITestOutputHelper output, PostgresFixture fixture)
-            : base(Initialize(fixture), nameof(PostgreSqlEventsByTagSpec), output)
+        public PostgreSqlCurrentEventsByTagSpec(ITestOutputHelper output, PostgresFixture fixture)
+            : base(Initialize(fixture), nameof(PostgreSqlCurrentEventsByTagSpec), output)
         {
             ReadJournal = Sys.ReadJournalFor<SqlReadJournal>(SqlReadJournal.Identifier);
         }

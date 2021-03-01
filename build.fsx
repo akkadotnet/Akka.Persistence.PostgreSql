@@ -7,44 +7,47 @@ open System.Text
 
 open Fake
 open Fake.DotNetCli
+open Fake.DocFxHelper
+open Fake.NuGet.Install
 
-//--------------------------------------------------------------------------------
-// Information about the project for Nuget and Assembly info files
-//--------------------------------------------------------------------------------
-
-let product = "Akka.NET"
-let authors = [ "Akka.NET Team" ]
-let copyright = "Copyright © 2013-2015 Akka.NET Team"
-let company = "Akka.NET Team"
-let description = "Akka.NET is a port of the popular Java/Scala framework Akka to .NET"
-let tags = ["akka";"actors";"actor";"model";"Akka";"concurrency"]
+// Variables
 let configuration = "Release"
+let solution = System.IO.Path.GetFullPath(string "./src/Akka.Persistence.PostgreSql.sln")
 
-//--------------------------------------------------------------------------------
 // Directories
-//--------------------------------------------------------------------------------
-
-let slnFile = __SOURCE_DIRECTORY__ @@ "src/Akka.Persistence.PostgreSql.sln"
+let toolsDir = __SOURCE_DIRECTORY__ @@ "tools"
 let output = __SOURCE_DIRECTORY__  @@ "bin"
-let outputTests = output @@ "TestResults"
-let outputPerfTests = output @@ "perf"
+let outputTests = __SOURCE_DIRECTORY__ @@ "TestResults"
+let outputPerfTests = __SOURCE_DIRECTORY__ @@ "PerfResults"
 let outputBinaries = output @@ "binaries"
 let outputNuGet = output @@ "nuget"
-let outputBinariesNet45 = outputBinaries @@ "net45"
-let outputBinariesNetStandard = outputBinaries @@ "netstandard1.6"
+let outputBinariesNet47 = outputBinaries @@ "net471"
+let outputBinariesNetStandard = outputBinaries @@ "netstandard2.0"
 
 // Read release notes and version
 let buildNumber = environVarOrDefault "BUILD_NUMBER" "0"
-let preReleaseVersionSuffix = (if (not (buildNumber = "0")) then (buildNumber) else "") + "-beta"
-let versionSuffix = 
-    match (getBuildParam "nugetprerelease") with
-    | "dev" -> preReleaseVersionSuffix
-    | _ -> ""
+let preReleaseVersionSuffix = "beta" + (if (not (buildNumber = "0")) then (buildNumber) else DateTime.UtcNow.Ticks.ToString())
 
 let releaseNotes =
-    File.ReadLines "./RELEASE_NOTES.md"
+    File.ReadLines (__SOURCE_DIRECTORY__ @@ "RELEASE_NOTES.md")
     |> ReleaseNotesHelper.parseReleaseNotes
 
+let versionFromReleaseNotes =
+    match releaseNotes.SemVer.PreRelease with
+    | Some r -> r.Origin
+    | None -> ""
+
+let versionSuffix =
+    match (getBuildParam "nugetprerelease") with
+    | "dev" -> preReleaseVersionSuffix
+    | "" -> versionFromReleaseNotes
+    | str -> str
+
+// Configuration values for tests
+let testNetFrameworkVersion = "net471"
+let testNetCoreVersion = "netcoreapp3.1"
+let testNetVersion = "net5.0"
+    
 printfn "Assembly version: %s\nNuget version; %s\n" releaseNotes.AssemblyVersion releaseNotes.NugetVersion
 
 //--------------------------------------------------------------------------------
@@ -52,11 +55,17 @@ printfn "Assembly version: %s\nNuget version; %s\n" releaseNotes.AssemblyVersion
 //--------------------------------------------------------------------------------
 
 Target "Clean" (fun _ ->
+    ActivateFinalTarget "KillCreatedProcesses"
+
     CleanDir output
     CleanDir outputTests
     CleanDir outputPerfTests
+    CleanDir outputBinaries
     CleanDir outputNuGet
+    CleanDir outputBinariesNet47
+    CleanDir outputBinariesNetStandard
     CleanDir "docs/_site"
+
     CleanDirs !! "./**/bin"
     CleanDirs !! "./**/obj"
 )
@@ -69,8 +78,8 @@ Target "RestorePackages" (fun _ ->
     DotNetCli.Restore
         (fun p -> 
             { p with
-                Project = slnFile
-                NoCache = false })
+                Project = solution
+                NoCache = true })
 )
 
 //--------------------------------------------------------------------------------
@@ -106,6 +115,22 @@ Target "Build" (fun _ ->
 // Run tests
 //--------------------------------------------------------------------------------
 
+type Runtime =
+    | NetCore
+    | Net
+    | NetFramework
+
+let getTestAssembly runtime project =
+    let assemblyPath = match runtime with
+                        | NetCore -> !! ("src" @@ "**" @@ "bin" @@ "Release" @@ testNetCoreVersion @@ fileNameWithoutExt project + ".dll")
+                        | NetFramework -> !! ("src" @@ "**" @@ "bin" @@ "Release" @@ testNetFrameworkVersion @@ fileNameWithoutExt project + ".dll")
+                        | Net -> !! ("src" @@ "**" @@ "bin" @@ "Release" @@ testNetVersion @@ fileNameWithoutExt project + ".dll")
+
+    if Seq.isEmpty assemblyPath then
+        None
+    else
+        Some (assemblyPath |> Seq.head)
+
 module internal ResultHandling =
     let (|OK|Failure|) = function
         | 0 -> OK
@@ -125,62 +150,55 @@ module internal ResultHandling =
         >> Option.iter (failBuildWithMessage errorLevel)
 
 Target "RunTests" <| fun _ ->
-    let projects = 
-        match (isWindows) with 
-        | true -> !! "./src/**/*.Tests.csproj"
-        | _ -> !! "./src/**/*.Tests.csproj" // if you need to filter specs for Linux vs. Windows, do it here
+    let projects =
+        match (isWindows) with
+            | true -> !! "./src/**/*.Tests.*sproj"
+            | _ -> !! "./src/**/*.Tests.*sproj" // if you need to filter specs for Linux vs. Windows, do it here
 
     ensureDirectory outputTests
 
     let runSingleProject project =
+        let arguments =
+            (sprintf "test -c Release --no-build --logger:trx --logger:\"console;verbosity=normal\" --framework %s --results-directory \"%s\" -- -parallel none" testNetFrameworkVersion outputTests)
+
         let result = ExecProcess(fun info ->
             info.FileName <- "dotnet"
             info.WorkingDirectory <- (Directory.GetParent project).FullName
-            info.Arguments <- (sprintf "xunit -f net452 -c Release -parallel none -teamcity -xml %s_net452_xunit.xml" (outputTests @@ fileNameWithoutExt project))) (TimeSpan.FromMinutes 30.)
-        
-        ResultHandling.failBuildIfXUnitReportedError TestRunnerErrorLevel.DontFailBuild result
+            info.Arguments <- arguments) (TimeSpan.FromMinutes 30.0)
 
-        // dotnet process will be killed by ExecProcess (or throw if can't) '
-        // but per https://github.com/xunit/xunit/issues/1338 xunit.console may not
-        killProcess "xunit.console"
-        killProcess "dotnet"
+        ResultHandling.failBuildIfXUnitReportedError TestRunnerErrorLevel.Error result
 
-    projects |> Seq.iter (log)
+    CreateDir outputTests
     projects |> Seq.iter (runSingleProject)
 
 Target "RunTestsNetCore" <| fun _ ->
-    let projects = 
-        match (isWindows) with 
-        | true -> !! "./src/**/*.Tests.csproj"
-        | _ -> !! "./src/**/*.Tests.csproj" // if you need to filter specs for Linux vs. Windows, do it here
+    let projects =
+        match (isWindows) with
+            | true -> !! "./src/**/*.Tests.*sproj"
+            | _ -> !! "./src/**/*.Tests.*sproj" // if you need to filter specs for Linux vs. Windows, do it here
 
     ensureDirectory outputTests
 
     let runSingleProject project =
+        let arguments =
+            (sprintf "test -c Release --no-build --logger:trx --logger:\"console;verbosity=normal\" --framework %s --results-directory \"%s\" -- -parallel none" testNetCoreVersion outputTests)
+
         let result = ExecProcess(fun info ->
             info.FileName <- "dotnet"
             info.WorkingDirectory <- (Directory.GetParent project).FullName
-            info.Arguments <- (sprintf "xunit -f netcoreapp1.1 -c Release -parallel none -teamcity -xml %s_netcore_xunit.xml" (outputTests @@ fileNameWithoutExt project))) (TimeSpan.FromMinutes 30.)
-        
-        ResultHandling.failBuildIfXUnitReportedError TestRunnerErrorLevel.DontFailBuild result
+            info.Arguments <- arguments) (TimeSpan.FromMinutes 30.0)
 
-        // dotnet process will be killed by ExecProcess (or throw if can't) '
-        // but per https://github.com/xunit/xunit/issues/1338 xunit.console may not
-        killProcess "xunit.console"
-        killProcess "dotnet"
+        ResultHandling.failBuildIfXUnitReportedError TestRunnerErrorLevel.Error result
 
-    projects |> Seq.iter (log)
+    CreateDir outputTests
     projects |> Seq.iter (runSingleProject)
 
 //--------------------------------------------------------------------------------
 // Nuget targets 
 //--------------------------------------------------------------------------------
 
-let overrideVersionSuffix (project:string) =
-    match project with
-    | _ -> versionSuffix // add additional matches to publish different versions for different projects in solution
-
 Target "CreateNuget" (fun _ ->    
+    CreateDir outputNuGet // need this to stop Azure pipelines copy stage from error-ing out
     let projects = !! "src/**/*.csproj" 
                    -- "src/**/*Tests.csproj" // Don't publish unit tests
                    -- "src/**/*Tests*.csproj"
@@ -192,13 +210,14 @@ Target "CreateNuget" (fun _ ->
                     Project = project
                     Configuration = configuration
                     AdditionalArgs = ["--include-symbols"]
-                    VersionSuffix = overrideVersionSuffix project
-                    OutputPath = outputNuGet })
+                    VersionSuffix = versionSuffix
+                    OutputPath = "\"" + outputNuGet + "\"" })
 
     projects |> Seq.iter (runSingleProject)
 )
 
 Target "PublishNuget" (fun _ ->
+
     let projects = !! "./bin/nuget/*.nupkg" -- "./bin/nuget/*.symbols.nupkg"
     let apiKey = getBuildParamOrDefault "nugetkey" ""
     let source = getBuildParamOrDefault "nugetpublishurl" ""
@@ -225,6 +244,14 @@ Target "PublishNuget" (fun _ ->
         projects |> Seq.iter (runSingleProject)
 )
 
+FinalTarget "KillCreatedProcesses" (fun _ ->
+    log "Shutting down dotnet build-server"
+    let result = ExecProcess(fun info ->
+            info.FileName <- "dotnet"
+            info.WorkingDirectory <- __SOURCE_DIRECTORY__
+            info.Arguments <- "build-server shutdown") (System.TimeSpan.FromMinutes 2.0)
+    if result <> 0 then failwithf "dotnet build-server shutdown failed"
+)
 
 //--------------------------------------------------------------------------------
 // Help 
@@ -328,22 +355,24 @@ Target "HelpDocs" <| fun _ ->
 //--------------------------------------------------------------------------------
 
 Target "BuildRelease" DoNothing
+Target "All" DoNothing
 Target "Nuget" DoNothing
 
 // build dependencies
-"Clean" ==> "AssemblyInfo" ==> "RestorePackages" ==> "Build" ==> "BuildRelease"
+"Clean" ==> "AssemblyInfo" ==> "Build"
+"Build" ==> "BuildRelease"
 
 // test dependencies
-"RestorePackages" ==> "RunTests"
-"RestorePackages" ==> "RunTestsNetCore"
+"Build" ==> "RunTests"
+"Build" ==> "RunTestsNetCore"
 
 // nuget dependencies
 "BuildRelease" ==> "CreateNuget"
 "CreateNuget" ==> "PublishNuget" ==> "Nuget"
 
-Target "All" DoNothing
 "BuildRelease" ==> "All"
 "RunTests" ==> "All"
+"RunTestsNetCore" ==> "All"
 "Nuget" ==> "All"
 
 RunTargetOrDefault "Help"
