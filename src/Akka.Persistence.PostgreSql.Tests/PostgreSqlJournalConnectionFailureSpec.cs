@@ -35,7 +35,8 @@ namespace Akka.Persistence.PostgreSql.Tests
                             connection-string = """ + connectionString + @"""
                         }
                     }
-                }";
+                }
+                akka.test.single-expect-default = 10s";
 
             return ConfigurationFactory.ParseString(config);
         }

@@ -29,14 +29,13 @@ namespace Akka.Persistence.PostgreSql.Tests.Performance
             DbUtils.Initialize(fixture);
 
             return ConfigurationFactory.ParseString(@"
-            akka.loglevel = INFO
             akka.persistence.journal.plugin = ""akka.persistence.journal.postgresql""
             akka.persistence.journal.postgresql {
                 class = ""Akka.Persistence.PostgreSql.Journal.PostgreSqlJournal, Akka.Persistence.PostgreSql""
                 auto-initialize = on
                 connection-string = """ + DbUtils.ConnectionString + @"""
             }
-            akka.test.single-expect-default = 3s")
+            akka.test.single-expect-default = 10s")
                 .WithFallback(PostgreSqlPersistence.DefaultConfiguration())
                 .WithFallback(Persistence.DefaultConfig());
         }
