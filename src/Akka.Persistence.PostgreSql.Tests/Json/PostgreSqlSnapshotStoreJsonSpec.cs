@@ -15,14 +15,12 @@ namespace Akka.Persistence.PostgreSql.Tests.Json
     [Collection("PostgreSqlSpec")]
     public class PostgreSqlSnapshotStoreJsonSpec : SnapshotStoreSpec
     {
-        private static readonly Config SpecConfig;
-
-        static PostgreSqlSnapshotStoreJsonSpec()
+        private static Config Initialize(PostgresFixture fixture)
         {
             //need to make sure db is created before the tests start
-            DbUtils.Initialize();
+            DbUtils.Initialize(fixture);
 
-            var config = @"
+            return ConfigurationFactory.ParseString(@"
                 akka.persistence {
                     publish-plugin-commands = on
                     snapshot-store {
@@ -37,16 +35,19 @@ namespace Akka.Persistence.PostgreSql.Tests.Json
                             stored-as = ""JSONB""
                         }
                     }
-                }";
-
-            SpecConfig = ConfigurationFactory.ParseString(config);
+                }
+                akka.test.single-expect-default = 10s");
         }
 
-        public PostgreSqlSnapshotStoreJsonSpec(ITestOutputHelper output)
-            : base(SpecConfig, "PostgreSqlSnapshotStoreJsonSpec", output: output)
+        
+        public PostgreSqlSnapshotStoreJsonSpec(ITestOutputHelper output, PostgresFixture fixture)
+            : base(Initialize(fixture), "PostgreSqlSnapshotStoreJsonSpec", output: output)
         {
             Initialize();
         }
+
+        // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
+        protected override bool SupportsSerialization => false;
 
         protected override void Dispose(bool disposing)
         {

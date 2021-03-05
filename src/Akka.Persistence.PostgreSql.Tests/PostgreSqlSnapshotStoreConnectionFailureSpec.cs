@@ -1,21 +1,24 @@
 ﻿//-----------------------------------------------------------------------
-// <copyright file="PostgreSqlJournalSpec.cs" company="Akka.NET Project">
+// <copyright file="PostgreSqlSnapshotStoreSpec.cs" company="Akka.NET Project">
 //     Copyright (C) 2009-2016 Lightbend Inc. <http://www.lightbend.com>
 //     Copyright (C) 2013-2016 Akka.NET project <https://github.com/akkadotnet/akka.net>
 // </copyright>
 //-----------------------------------------------------------------------
 
 using Akka.Configuration;
-using Akka.Persistence.TCK.Journal;
+using Akka.Persistence.Snapshot;
+using Akka.Persistence.Sql.TestKit;
+using Akka.Persistence.TCK.Snapshot;
+using Akka.TestKit;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Akka.Persistence.PostgreSql.Tests
 {
     [Collection("PostgreSqlSpec")]
-    public class PostgreSqlJournalSpec : JournalSpec
+    public class PostgreSqlSnapshotStoreConnectionFailureSpec : SqlSnapshotConnectionFailureSpec
     {
-        private static Config Initialize(PostgresFixture fixture) 
+        private static Config Initialize(PostgresFixture fixture, string connectionString)
         {
             //need to make sure db is created before the tests start
             DbUtils.Initialize(fixture);
@@ -23,15 +26,15 @@ namespace Akka.Persistence.PostgreSql.Tests
             var config = @"
                 akka.persistence {
                     publish-plugin-commands = on
-                    journal {
-                        plugin = ""akka.persistence.journal.postgresql""
+                    snapshot-store {
+                        plugin = ""akka.persistence.snapshot-store.postgresql""
                         postgresql {
-                            class = ""Akka.Persistence.PostgreSql.Journal.PostgreSqlJournal, Akka.Persistence.PostgreSql""
+                            class = ""Akka.Persistence.PostgreSql.Snapshot.PostgreSqlSnapshotStore, Akka.Persistence.PostgreSql""
                             plugin-dispatcher = ""akka.actor.default-dispatcher""
-                            table-name = event_journal
+                            table-name = snapshot_store
                             schema-name = public
                             auto-initialize = on
-                            connection-string = """ + DbUtils.ConnectionString + @"""
+                            connection-string = """ + connectionString + @"""
                         }
                     }
                 }
@@ -40,13 +43,9 @@ namespace Akka.Persistence.PostgreSql.Tests
             return ConfigurationFactory.ParseString(config);
         }
 
-        // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
-        protected override bool SupportsSerialization => false;
-
-        public PostgreSqlJournalSpec(ITestOutputHelper output, PostgresFixture fixture)
-            : base(Initialize(fixture), "PostgreSqlJournalSpec", output: output)
+        public PostgreSqlSnapshotStoreConnectionFailureSpec(ITestOutputHelper output, PostgresFixture fixture)
+            : base(Initialize(fixture, DefaultInvalidConnectionString), output: output)
         {
-            Initialize();
         }
 
         protected override void Dispose(bool disposing)

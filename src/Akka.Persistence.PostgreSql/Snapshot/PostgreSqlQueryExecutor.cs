@@ -68,7 +68,10 @@ namespace Akka.Persistence.PostgreSql.Snapshot
                     _serialize = ss =>
                     {
                         var serializer = Serialization.FindSerializerFor(ss);
-                        return new SerializationResult(NpgsqlDbType.Bytea, serializer.ToBinary(ss), serializer);
+                        // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
+                        var binary = Akka.Serialization.Serialization
+                            .WithTransport(Serialization.System, () => serializer.ToBinary(ss));
+                        return new SerializationResult(NpgsqlDbType.Bytea, binary, serializer);
                     };
                     _deserialize = (type, serialized, manifest, serializerId) =>
                     {
@@ -116,10 +119,10 @@ namespace Akka.Persistence.PostgreSql.Snapshot
             var snapshotType = snapshot.GetType();
             var serializer = Serialization.FindSerializerForType(snapshotType, Configuration.DefaultSerializer);
 
-            string manifest = "";
-            if (serializer is SerializerWithStringManifest)
+            var manifest = "";
+            if (serializer is SerializerWithStringManifest stringManifest)
             {
-                manifest = ((SerializerWithStringManifest)serializer).Manifest(snapshot);
+                manifest = stringManifest.Manifest(snapshot);
             }
             else if (!serializer.IncludeManifest)
             {
@@ -139,12 +142,14 @@ namespace Akka.Persistence.PostgreSql.Snapshot
 
             int? serializerId = null;
             Type type = null;
-
-            if (!string.IsNullOrEmpty(manifest))
-                type = Type.GetType(manifest, throwOnError: true);
-
-            if (!reader.IsDBNull(5))
+            if (reader.IsDBNull(5))
+            {
+                type = Type.GetType(manifest, true);
+            }
+            else
+            {
                 serializerId = reader.GetInt32(5);
+            }
 
             var snapshot = _deserialize(type, reader[4], manifest, serializerId);
 

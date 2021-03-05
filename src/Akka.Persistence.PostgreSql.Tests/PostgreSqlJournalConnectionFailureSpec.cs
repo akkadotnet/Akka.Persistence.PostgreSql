@@ -1,26 +1,27 @@
 ﻿//-----------------------------------------------------------------------
-// <copyright file="PostgreSqlJournalJsonSpec.cs" company="Akka.NET Project">
+// <copyright file="PostgreSqlJournalSpec.cs" company="Akka.NET Project">
 //     Copyright (C) 2009-2016 Lightbend Inc. <http://www.lightbend.com>
 //     Copyright (C) 2013-2016 Akka.NET project <https://github.com/akkadotnet/akka.net>
 // </copyright>
 //-----------------------------------------------------------------------
 
 using Akka.Configuration;
+using Akka.Persistence.Sql.TestKit;
 using Akka.Persistence.TCK.Journal;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Akka.Persistence.PostgreSql.Tests.Json
+namespace Akka.Persistence.PostgreSql.Tests
 {
     [Collection("PostgreSqlSpec")]
-    public class PostgreSqlJournalJsonSpec : JournalSpec
+    public class PostgreSqlJournalConnectionFailureSpec : SqlJournalConnectionFailureSpec
     {
-        private static Config Initialize(PostgresFixture fixture)
+        private static Config Initialize(PostgresFixture fixture, string connectionString) 
         {
             //need to make sure db is created before the tests start
             DbUtils.Initialize(fixture);
 
-            return ConfigurationFactory.ParseString(@"
+            var config = @"
                 akka.persistence {
                     publish-plugin-commands = on
                     journal {
@@ -31,21 +32,18 @@ namespace Akka.Persistence.PostgreSql.Tests.Json
                             table-name = event_journal
                             schema-name = public
                             auto-initialize = on
-                            connection-string = """ + DbUtils.ConnectionString + @"""
-                            stored-as = ""jsonb""
+                            connection-string = """ + connectionString + @"""
                         }
                     }
                 }
-                akka.test.single-expect-default = 10s");
+                akka.test.single-expect-default = 10s";
+
+            return ConfigurationFactory.ParseString(config);
         }
 
-        // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
-        protected override bool SupportsSerialization => false;
-
-        public PostgreSqlJournalJsonSpec(ITestOutputHelper output, PostgresFixture fixture)
-            : base(Initialize(fixture), "PostgreSqlJournalJsonSpec", output: output)
+        public PostgreSqlJournalConnectionFailureSpec(ITestOutputHelper output, PostgresFixture fixture)
+            : base(Initialize(fixture, DefaultInvalidConnectionString), output: output)
         {
-            Initialize();
         }
 
         protected override void Dispose(bool disposing)

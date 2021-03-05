@@ -16,12 +16,10 @@ namespace Akka.Persistence.PostgreSql.Tests
     [Collection("PostgreSqlSpec")]
     public class PostgreSqlSnapshotStoreSpec : SnapshotStoreSpec
     {
-        private static readonly Config SpecConfig;
-
-        static PostgreSqlSnapshotStoreSpec()
+        private static Config Initialize(PostgresFixture fixture)
         {
             //need to make sure db is created before the tests start
-            DbUtils.Initialize();
+            DbUtils.Initialize(fixture);
 
             var config = @"
                 akka.persistence {
@@ -37,13 +35,14 @@ namespace Akka.Persistence.PostgreSql.Tests
                             connection-string = """ + DbUtils.ConnectionString + @"""
                         }
                     }
-                }";
+                }
+                akka.test.single-expect-default = 10s";
 
-            SpecConfig = ConfigurationFactory.ParseString(config);
+            return ConfigurationFactory.ParseString(config);
         }
 
-        public PostgreSqlSnapshotStoreSpec(ITestOutputHelper output)
-            : base(SpecConfig, "PostgreSqlSnapshotStoreSpec", output: output)
+        public PostgreSqlSnapshotStoreSpec(ITestOutputHelper output, PostgresFixture fixture)
+            : base(Initialize(fixture), "PostgreSqlSnapshotStoreSpec", output: output)
         {
             Initialize();
         }

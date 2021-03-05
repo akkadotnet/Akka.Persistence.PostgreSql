@@ -1,3 +1,9 @@
+#### 1.3.9 August 29 2018 ####
+Upgraded for Akka.NET v1.3.9.
+
+**Other Fixes and Improvements**
+* [Bugfix: Loading shapshot error](https://github.com/AkkaNetContrib/Akka.Persistence.PostgreSql/issues/57)
+
 #### 1.3.8 July 6 2018 ####
 Upgraded to support Akka.NET 1.3.8 and to take advantage of some performance improvements that have been added to Akka.Persistence for loading large snapshots, which you can read more about here: https://github.com/akkadotnet/akka.net/issues/3422
 
