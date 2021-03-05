@@ -39,7 +39,8 @@ namespace Akka.Persistence.PostgreSql.Tests.Serialization
                             connection-string = """ + DbUtils.ConnectionString + @"""
                         }
                     }
-                }");
+                }
+                akka.test.single-expect-default = 10s");
         }
 
         [Fact(Skip = "Sql plugin does not support EventAdapter.Manifest")]

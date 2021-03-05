@@ -21,7 +21,7 @@ namespace Akka.Persistence.PostgreSql.Tests.Json
             DbUtils.Initialize(fixture);
 
             return ConfigurationFactory.ParseString(@"
-            akka.persistence {
+                akka.persistence {
                     publish-plugin-commands = on
                     journal {
                         plugin = ""akka.persistence.journal.postgresql""
@@ -35,7 +35,8 @@ namespace Akka.Persistence.PostgreSql.Tests.Json
                             stored-as = ""jsonb""
                         }
                     }
-                }");
+                }
+                akka.test.single-expect-default = 10s");
         }
 
         // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811

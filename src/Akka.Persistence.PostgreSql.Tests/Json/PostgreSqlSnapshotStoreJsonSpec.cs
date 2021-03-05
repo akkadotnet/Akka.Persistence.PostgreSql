@@ -21,7 +21,7 @@ namespace Akka.Persistence.PostgreSql.Tests.Json
             DbUtils.Initialize(fixture);
 
             return ConfigurationFactory.ParseString(@"
-            akka.persistence {
+                akka.persistence {
                     publish-plugin-commands = on
                     snapshot-store {
                         plugin = ""akka.persistence.snapshot-store.postgresql""
@@ -35,7 +35,8 @@ namespace Akka.Persistence.PostgreSql.Tests.Json
                             stored-as = ""JSONB""
                         }
                     }
-                }");
+                }
+                akka.test.single-expect-default = 10s");
         }
 
         
