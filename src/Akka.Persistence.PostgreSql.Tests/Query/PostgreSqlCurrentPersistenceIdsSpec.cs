@@ -23,8 +23,6 @@ namespace Akka.Persistence.PostgreSql.Tests.Query
             DbUtils.Initialize(fixture);
 
             return ConfigurationFactory.ParseString($@"
-            akka.loglevel = INFO
-            akka.test.single-expect-default = 10s
             akka.persistence.journal.plugin = ""akka.persistence.journal.postgresql""
             akka.persistence.journal.postgresql {{
                 class = ""Akka.Persistence.PostgreSql.Journal.PostgreSqlJournal, Akka.Persistence.PostgreSql""
@@ -34,7 +32,7 @@ namespace Akka.Persistence.PostgreSql.Tests.Query
                 connection-string = ""{DbUtils.ConnectionString}""
                 refresh-interval = 1s
             }}
-            akka.test.single-expect-default = 15s")
+            akka.test.single-expect-default = 10s")
                 .WithFallback(PostgreSqlPersistence.DefaultConfiguration())
                 .WithFallback(SqlReadJournal.DefaultConfiguration())
                 .WithFallback(Persistence.DefaultConfig());
