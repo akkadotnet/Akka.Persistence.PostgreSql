@@ -24,14 +24,12 @@ namespace Akka.Persistence.PostgreSql.Journal
 {
     public class PostgreSqlQueryExecutor : AbstractQueryExecutor
     {
-        private readonly PostgreSqlQueryConfiguration _configuration;
         private readonly Func<IPersistentRepresentation, SerializationResult> _serialize;
         private readonly Func<Type, object, string, int?, object> _deserialize;
 
         public PostgreSqlQueryExecutor(PostgreSqlQueryConfiguration configuration, Akka.Serialization.Serialization serialization, ITimestampProvider timestampProvider)
             : base(configuration, serialization, timestampProvider)
         {
-            _configuration = configuration;
             var storedAs = configuration.StoredAs.ToString().ToUpperInvariant();
             
             CreateEventsJournalSql = $@"
@@ -56,7 +54,14 @@ namespace Akka.Persistence.PostgreSql.Journal
                     CONSTRAINT {Configuration.MetaTableName}_pk PRIMARY KEY ({Configuration.PersistenceIdColumnName}, {Configuration.SequenceNrColumnName})
                 );";
 
-            switch (_configuration.StoredAs)
+            HighestSequenceNrSql = $@"
+                SELECT MAX(u.SeqNr) as SequenceNr 
+                FROM (
+                    SELECT MAX(e.{Configuration.SequenceNrColumnName}) as SeqNr FROM {Configuration.FullJournalTableName} e WHERE e.{Configuration.PersistenceIdColumnName} = @PersistenceId
+                    UNION
+                    SELECT MAX(m.{Configuration.SequenceNrColumnName}) as SeqNr FROM {Configuration.FullMetaTableName} m WHERE m.{Configuration.PersistenceIdColumnName} = @PersistenceId) as u";
+
+            switch (configuration.StoredAs)
             {
                 case StoredAsType.ByteA:
                     _serialize = e =>
@@ -87,21 +92,22 @@ namespace Akka.Persistence.PostgreSql.Journal
                     }; 
                     break;
                 case StoredAsType.JsonB:
-                    _serialize = e => new SerializationResult(NpgsqlDbType.Jsonb, JsonConvert.SerializeObject(e.Payload, _configuration.JsonSerializerSettings), null);
-                    _deserialize = (type, serialized, manifest, serializerId) => JsonConvert.DeserializeObject((string)serialized, type, _configuration.JsonSerializerSettings);
+                    _serialize = e => new SerializationResult(NpgsqlDbType.Jsonb, JsonConvert.SerializeObject(e.Payload, configuration.JsonSerializerSettings), null);
+                    _deserialize = (type, serialized, manifest, serializerId) => JsonConvert.DeserializeObject((string)serialized, type, configuration.JsonSerializerSettings);
                     break;
                 case StoredAsType.Json:
-                    _serialize = e => new SerializationResult(NpgsqlDbType.Json, JsonConvert.SerializeObject(e.Payload, _configuration.JsonSerializerSettings), null);
-                    _deserialize = (type, serialized, manifest, serializerId) => JsonConvert.DeserializeObject((string)serialized, type, _configuration.JsonSerializerSettings);
+                    _serialize = e => new SerializationResult(NpgsqlDbType.Json, JsonConvert.SerializeObject(e.Payload, configuration.JsonSerializerSettings), null);
+                    _deserialize = (type, serialized, manifest, serializerId) => JsonConvert.DeserializeObject((string)serialized, type, configuration.JsonSerializerSettings);
                     break;
                 default:
-                    throw new NotSupportedException($"{_configuration.StoredAs} is not supported Db type for a payload");
+                    throw new NotSupportedException($"{configuration.StoredAs} is not supported Db type for a payload");
             }
         }
 
         protected override DbCommand CreateCommand(DbConnection connection) => ((NpgsqlConnection)connection).CreateCommand();
         protected override string CreateEventsJournalSql { get; }
         protected override string CreateMetaTableSql { get; }
+        protected override string HighestSequenceNrSql { get; }
 
         protected override void WriteEvent(DbCommand command, IPersistentRepresentation e, IImmutableSet<string> tags)
         {
