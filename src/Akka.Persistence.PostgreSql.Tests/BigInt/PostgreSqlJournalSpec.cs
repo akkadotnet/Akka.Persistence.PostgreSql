@@ -6,18 +6,15 @@
 //-----------------------------------------------------------------------
 
 using System;
-using System.Reflection;
 using System.Threading.Tasks;
-using Akka.Actor;
 using Akka.Configuration;
-using Akka.Persistence.PostgreSql.Journal;
 using Akka.Persistence.TCK.Journal;
 using FluentAssertions;
 using Npgsql;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Akka.Persistence.PostgreSql.Tests
+namespace Akka.Persistence.PostgreSql.Tests.BigInt
 {
     [Collection("PostgreSqlSpec")]
     public class PostgreSqlJournalSpec : JournalSpec
@@ -39,6 +36,7 @@ namespace Akka.Persistence.PostgreSql.Tests
                             schema-name = public
                             auto-initialize = on
                             connection-string = """ + DbUtils.ConnectionString + @"""
+                            use-bigint-identity-for-ordering-column = on
                         }
                     }
                 }
@@ -63,7 +61,7 @@ namespace Akka.Persistence.PostgreSql.Tests
         }
 
         [Fact]
-        public async Task BigSerial_Journal_ordering_column_data_type_should_be_BigSerial()
+        public async Task BigInt_Journal_ordering_column_data_type_should_be_BigInt()
         {
             using (var conn = new NpgsqlConnection(DbUtils.ConnectionString))
             {
@@ -82,10 +80,10 @@ namespace Akka.Persistence.PostgreSql.Tests
                     await reader.ReadAsync();
 
                     reader.GetString(0).Should().Be("ordering");
-                    reader.GetString(1).Should().Be("nextval('event_journal_ordering_seq'::regclass)");
+                    reader[1].Should().BeOfType<DBNull>();
                     reader.GetString(2).Should().Be("bigint");
-                    reader.GetString(3).Should().Be("NO");
-                    reader[4].Should().BeOfType<DBNull>();
+                    reader.GetString(3).Should().Be("YES");
+                    reader.GetString(4).Should().Be("ALWAYS");
                 }
             }
         }

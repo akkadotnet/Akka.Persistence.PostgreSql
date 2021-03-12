@@ -34,7 +34,21 @@ namespace Akka.Persistence.PostgreSql.Journal
         {
             var storedAs = configuration.StoredAs.ToString().ToUpperInvariant();
             
-            CreateEventsJournalSql = $@"
+            CreateEventsJournalSql = configuration.UseBigIntPrimaryKey 
+                ? $@"
+                CREATE TABLE IF NOT EXISTS {Configuration.FullJournalTableName} (
+                    {Configuration.OrderingColumnName} BIGINT NOT NULL GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+                    {Configuration.PersistenceIdColumnName} VARCHAR(255) NOT NULL,
+                    {Configuration.SequenceNrColumnName} BIGINT NOT NULL,
+                    {Configuration.IsDeletedColumnName} BOOLEAN NOT NULL,
+                    {Configuration.TimestampColumnName} BIGINT NOT NULL,
+                    {Configuration.ManifestColumnName} VARCHAR(500) NOT NULL,
+                    {Configuration.PayloadColumnName} {storedAs} NOT NULL,
+                    {Configuration.TagsColumnName} VARCHAR(100) NULL,
+                    {Configuration.SerializerIdColumnName} INTEGER NULL,
+                    CONSTRAINT {Configuration.JournalEventsTableName}_uq UNIQUE ({Configuration.PersistenceIdColumnName}, {Configuration.SequenceNrColumnName})
+                );"
+                : $@"
                 CREATE TABLE IF NOT EXISTS {Configuration.FullJournalTableName} (
                     {Configuration.OrderingColumnName} BIGSERIAL NOT NULL PRIMARY KEY,
                     {Configuration.PersistenceIdColumnName} VARCHAR(255) NOT NULL,
@@ -46,8 +60,7 @@ namespace Akka.Persistence.PostgreSql.Journal
                     {Configuration.TagsColumnName} VARCHAR(100) NULL,
                     {Configuration.SerializerIdColumnName} INTEGER NULL,
                     CONSTRAINT {Configuration.JournalEventsTableName}_uq UNIQUE ({Configuration.PersistenceIdColumnName}, {Configuration.SequenceNrColumnName})
-                );
-                ";
+                );";
 
             CreateMetaTableSql = $@"
                 CREATE TABLE IF NOT EXISTS {Configuration.FullMetaTableName} (
@@ -254,6 +267,7 @@ namespace Akka.Persistence.PostgreSql.Journal
     {
         public readonly StoredAsType StoredAs;
         public readonly JsonSerializerSettings JsonSerializerSettings;
+        public readonly bool UseBigIntPrimaryKey;
 
         public PostgreSqlQueryConfiguration(
             string schemaName,
@@ -270,14 +284,16 @@ namespace Akka.Persistence.PostgreSql.Journal
             string serializerIdColumnName,
             TimeSpan timeout,
             StoredAsType storedAs,
-            string defaultSerializer,
+            string defaultSerializer, 
             JsonSerializerSettings jsonSerializerSettings = null, 
-            bool useSequentialAccess = true)
+            bool useSequentialAccess = true, 
+            bool useBigIntPrimaryKey = false)
             : base(schemaName, journalEventsTableName, metaTableName, persistenceIdColumnName, sequenceNrColumnName,
                   payloadColumnName, manifestColumnName, timestampColumnName, isDeletedColumnName, tagsColumnName, orderingColumn, 
                 serializerIdColumnName, timeout, defaultSerializer, useSequentialAccess)
         {
             StoredAs = storedAs;
+            UseBigIntPrimaryKey = useBigIntPrimaryKey;
             JsonSerializerSettings = jsonSerializerSettings ?? new JsonSerializerSettings
             {
                 ContractResolver = new AkkaContractResolver()
