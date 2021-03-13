@@ -6,18 +6,22 @@
 //-----------------------------------------------------------------------
 
 using System;
+using System.Collections.Immutable;
+using System.Linq;
 using System.Threading.Tasks;
+using Akka.Actor;
 using Akka.Configuration;
+using Akka.Persistence.TCK;
 using Akka.Persistence.TCK.Journal;
 using FluentAssertions;
 using Npgsql;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Akka.Persistence.PostgreSql.Tests.BigInt
+namespace Akka.Persistence.PostgreSql.Tests
 {
     [Collection("PostgreSqlSpec")]
-    public class PostgreSqlJournalSpec : JournalSpec
+    public class PostgreSqlJournalBigIntSpec : JournalSpec
     {
         private static Config Initialize(PostgresFixture fixture) 
         {
@@ -48,8 +52,8 @@ namespace Akka.Persistence.PostgreSql.Tests.BigInt
         // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
         protected override bool SupportsSerialization => false;
 
-        public PostgreSqlJournalSpec(ITestOutputHelper output, PostgresFixture fixture)
-            : base(Initialize(fixture), "PostgreSqlJournalSpec", output: output)
+        public PostgreSqlJournalBigIntSpec(ITestOutputHelper output, PostgresFixture fixture)
+            : base(Initialize(fixture), "PostgreSqlJournalBigIntSpec", output)
         {
             Initialize();
         }
@@ -79,6 +83,7 @@ namespace Akka.Persistence.PostgreSql.Tests.BigInt
                     var reader = await cmd.ExecuteReaderAsync();
                     await reader.ReadAsync();
 
+                    // these are the "fingerprint" of BIGINT ... GENERATED ALWAYS AS IDENTITY
                     reader.GetString(0).Should().Be("ordering");
                     reader[1].Should().BeOfType<DBNull>();
                     reader.GetString(2).Should().Be("bigint");

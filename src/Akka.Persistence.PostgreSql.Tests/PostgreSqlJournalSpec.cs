@@ -81,6 +81,7 @@ namespace Akka.Persistence.PostgreSql.Tests
                     var reader = await cmd.ExecuteReaderAsync();
                     await reader.ReadAsync();
 
+                    // these are the "fingerprint" of BIGSERIAL
                     reader.GetString(0).Should().Be("ordering");
                     reader.GetString(1).Should().Be("nextval('event_journal_ordering_seq'::regclass)");
                     reader.GetString(2).Should().Be("bigint");
