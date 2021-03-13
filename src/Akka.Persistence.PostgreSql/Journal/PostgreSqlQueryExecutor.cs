@@ -34,23 +34,9 @@ namespace Akka.Persistence.PostgreSql.Journal
         {
             var storedAs = configuration.StoredAs.ToString().ToUpperInvariant();
             
-            CreateEventsJournalSql = configuration.UseBigIntPrimaryKey 
-                ? $@"
+            CreateEventsJournalSql =  $@"
                 CREATE TABLE IF NOT EXISTS {Configuration.FullJournalTableName} (
-                    {Configuration.OrderingColumnName} BIGINT NOT NULL GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-                    {Configuration.PersistenceIdColumnName} VARCHAR(255) NOT NULL,
-                    {Configuration.SequenceNrColumnName} BIGINT NOT NULL,
-                    {Configuration.IsDeletedColumnName} BOOLEAN NOT NULL,
-                    {Configuration.TimestampColumnName} BIGINT NOT NULL,
-                    {Configuration.ManifestColumnName} VARCHAR(500) NOT NULL,
-                    {Configuration.PayloadColumnName} {storedAs} NOT NULL,
-                    {Configuration.TagsColumnName} VARCHAR(100) NULL,
-                    {Configuration.SerializerIdColumnName} INTEGER NULL,
-                    CONSTRAINT {Configuration.JournalEventsTableName}_uq UNIQUE ({Configuration.PersistenceIdColumnName}, {Configuration.SequenceNrColumnName})
-                );"
-                : $@"
-                CREATE TABLE IF NOT EXISTS {Configuration.FullJournalTableName} (
-                    {Configuration.OrderingColumnName} BIGSERIAL NOT NULL PRIMARY KEY,
+                    {Configuration.OrderingColumnName} {(configuration.UseBigIntPrimaryKey ? "BIGINT GENERATED ALWAYS AS IDENTITY" : "BIGSERIAL")} NOT NULL PRIMARY KEY,
                     {Configuration.PersistenceIdColumnName} VARCHAR(255) NOT NULL,
                     {Configuration.SequenceNrColumnName} BIGINT NOT NULL,
                     {Configuration.IsDeletedColumnName} BOOLEAN NOT NULL,
