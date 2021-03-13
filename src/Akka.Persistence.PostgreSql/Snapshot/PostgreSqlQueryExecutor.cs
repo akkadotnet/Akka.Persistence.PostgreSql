@@ -139,6 +139,7 @@ namespace Akka.Persistence.PostgreSql.Snapshot
             var sequenceNr = reader.GetInt64(1);
             var timestamp = new DateTime(reader.GetInt64(2));
             var manifest = reader.GetString(3);
+            var payloadObject = reader[4];
 
             int? serializerId = null;
             Type type = null;
@@ -151,7 +152,7 @@ namespace Akka.Persistence.PostgreSql.Snapshot
                 serializerId = reader.GetInt32(5);
             }
 
-            var snapshot = _deserialize(type, reader[4], manifest, serializerId);
+            var snapshot = _deserialize(type, payloadObject, manifest, serializerId);
 
             var metadata = new SnapshotMetadata(persistenceId, sequenceNr, timestamp);
             return new SelectedSnapshot(metadata, snapshot);
