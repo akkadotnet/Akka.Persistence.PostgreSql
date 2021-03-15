@@ -42,6 +42,19 @@ akka.persistence{
 
 			# defines column db type used to store payload. Available option: BYTEA (default), JSON, JSONB
 			stored-as = BYTEA
+
+			# Setting used to toggle sequential read access when loading large objects
+			# from journals and snapshot stores.
+			sequential-access = off
+
+			# When turned on, persistence will use `BIGINT` and `GENERATED ALWAYS AS IDENTITY`
+			# for journal table schema creation.
+			# NOTE: This only affects newly created tables, as such, it should not affect any
+			#       existing database.
+			#
+			# !!!!! WARNING !!!!!
+			# To use this feature, you have to have PorsgreSql version 10 or above
+			use-bigint-identity-for-ordering-column = off
 		}
 	}
 
@@ -71,6 +84,10 @@ akka.persistence{
 			
 			# defines column db type used to store payload. Available option: BYTEA (default), JSON, JSONB
 			stored-as = BYTEA
+
+			# Setting used to toggle sequential read access when loading large objects
+			# from journals and snapshot stores.
+			sequential-access = off
 		}
 	}
 }
@@ -109,6 +126,23 @@ CREATE TABLE {your_metadata_table_name} (
     CONSTRAINT {your_metadata_table_name}_pk PRIMARY KEY (persistence_id, sequence_nr)
 );
 ```
+
+Note that if you turn on the `akka.persistence.journal.postgresql.use-bigint-identity-for-ordering-column` flag, the journal table schema will be altered to the latest recommended primary key setting.
+```
+CREATE TABLE {your_journal_table_name} (
+	ordering BIGINT NOT NULL GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    persistence_id VARCHAR(255) NOT NULL,
+    sequence_nr BIGINT NOT NULL,
+    is_deleted BOOLEAN NOT NULL,
+    created_at BIGINT NOT NULL,
+    manifest VARCHAR(500) NOT NULL,
+    payload BYTEA NOT NULL,
+    tags VARCHAR(100) NULL,
+    serializer_id INTEGER NULL,
+    CONSTRAINT {your_journal_table_name}_uq UNIQUE (persistence_id, sequence_nr)
+);
+```
+Since this script is only run once during table generation, we will not provide any migration path for this change, any migration is left as an exercise for the user.
 
 ### Migration
 

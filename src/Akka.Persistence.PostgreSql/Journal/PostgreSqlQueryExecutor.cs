@@ -34,9 +34,9 @@ namespace Akka.Persistence.PostgreSql.Journal
         {
             var storedAs = configuration.StoredAs.ToString().ToUpperInvariant();
             
-            CreateEventsJournalSql = $@"
+            CreateEventsJournalSql =  $@"
                 CREATE TABLE IF NOT EXISTS {Configuration.FullJournalTableName} (
-                    {Configuration.OrderingColumnName} BIGSERIAL NOT NULL PRIMARY KEY,
+                    {Configuration.OrderingColumnName} {(configuration.UseBigIntPrimaryKey ? "BIGINT GENERATED ALWAYS AS IDENTITY" : "BIGSERIAL")} NOT NULL PRIMARY KEY,
                     {Configuration.PersistenceIdColumnName} VARCHAR(255) NOT NULL,
                     {Configuration.SequenceNrColumnName} BIGINT NOT NULL,
                     {Configuration.IsDeletedColumnName} BOOLEAN NOT NULL,
@@ -46,8 +46,7 @@ namespace Akka.Persistence.PostgreSql.Journal
                     {Configuration.TagsColumnName} VARCHAR(100) NULL,
                     {Configuration.SerializerIdColumnName} INTEGER NULL,
                     CONSTRAINT {Configuration.JournalEventsTableName}_uq UNIQUE ({Configuration.PersistenceIdColumnName}, {Configuration.SequenceNrColumnName})
-                );
-                ";
+                );";
 
             CreateMetaTableSql = $@"
                 CREATE TABLE IF NOT EXISTS {Configuration.FullMetaTableName} (
@@ -254,6 +253,7 @@ namespace Akka.Persistence.PostgreSql.Journal
     {
         public readonly StoredAsType StoredAs;
         public readonly JsonSerializerSettings JsonSerializerSettings;
+        public readonly bool UseBigIntPrimaryKey;
 
         public PostgreSqlQueryConfiguration(
             string schemaName,
@@ -270,14 +270,16 @@ namespace Akka.Persistence.PostgreSql.Journal
             string serializerIdColumnName,
             TimeSpan timeout,
             StoredAsType storedAs,
-            string defaultSerializer,
+            string defaultSerializer, 
             JsonSerializerSettings jsonSerializerSettings = null, 
-            bool useSequentialAccess = true)
+            bool useSequentialAccess = true, 
+            bool useBigIntPrimaryKey = false)
             : base(schemaName, journalEventsTableName, metaTableName, persistenceIdColumnName, sequenceNrColumnName,
                   payloadColumnName, manifestColumnName, timestampColumnName, isDeletedColumnName, tagsColumnName, orderingColumn, 
                 serializerIdColumnName, timeout, defaultSerializer, useSequentialAccess)
         {
             StoredAs = storedAs;
+            UseBigIntPrimaryKey = useBigIntPrimaryKey;
             JsonSerializerSettings = jsonSerializerSettings ?? new JsonSerializerSettings
             {
                 ContractResolver = new AkkaContractResolver()
