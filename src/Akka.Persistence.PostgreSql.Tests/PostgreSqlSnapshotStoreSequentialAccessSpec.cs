@@ -14,7 +14,7 @@ using Xunit.Abstractions;
 namespace Akka.Persistence.PostgreSql.Tests
 {
     [Collection("PostgreSqlSpec")]
-    public class PostgreSqlSnapshotStoreSpec : SnapshotStoreSpec
+    public class PostgreSqlSnapshotStoreSequentialAccessSpec : SnapshotStoreSpec
     {
         private static Config Initialize(PostgresFixture fixture)
         {
@@ -33,6 +33,7 @@ namespace Akka.Persistence.PostgreSql.Tests
                             schema-name = public
                             auto-initialize = on
                             connection-string = """ + DbUtils.ConnectionString + @"""
+                            sequential-access = on
                         }
                     }
                 }
@@ -41,7 +42,7 @@ namespace Akka.Persistence.PostgreSql.Tests
             return ConfigurationFactory.ParseString(config);
         }
 
-        public PostgreSqlSnapshotStoreSpec(ITestOutputHelper output, PostgresFixture fixture)
+        public PostgreSqlSnapshotStoreSequentialAccessSpec(ITestOutputHelper output, PostgresFixture fixture)
             : base(Initialize(fixture), "PostgreSqlSnapshotStoreSpec", output: output)
         {
             Initialize();

@@ -6,6 +6,8 @@
 //-----------------------------------------------------------------------
 
 using Akka.Configuration;
+using Akka.Persistence.Snapshot;
+using Akka.Persistence.Sql.TestKit;
 using Akka.Persistence.TCK.Snapshot;
 using Akka.TestKit;
 using Xunit;
@@ -14,9 +16,9 @@ using Xunit.Abstractions;
 namespace Akka.Persistence.PostgreSql.Tests
 {
     [Collection("PostgreSqlSpec")]
-    public class PostgreSqlSnapshotStoreSpec : SnapshotStoreSpec
+    public class PostgreSqlSnapshotStoreConnectionFailureSpec : SqlSnapshotConnectionFailureSpec
     {
-        private static Config Initialize(PostgresFixture fixture)
+        private static Config Initialize(PostgresFixture fixture, string connectionString)
         {
             //need to make sure db is created before the tests start
             DbUtils.Initialize(fixture);
@@ -32,7 +34,7 @@ namespace Akka.Persistence.PostgreSql.Tests
                             table-name = snapshot_store
                             schema-name = public
                             auto-initialize = on
-                            connection-string = """ + DbUtils.ConnectionString + @"""
+                            connection-string = """ + connectionString + @"""
                         }
                     }
                 }
@@ -41,31 +43,15 @@ namespace Akka.Persistence.PostgreSql.Tests
             return ConfigurationFactory.ParseString(config);
         }
 
-        public PostgreSqlSnapshotStoreSpec(ITestOutputHelper output, PostgresFixture fixture)
-            : base(Initialize(fixture), "PostgreSqlSnapshotStoreSpec", output: output)
+        public PostgreSqlSnapshotStoreConnectionFailureSpec(ITestOutputHelper output, PostgresFixture fixture)
+            : base(Initialize(fixture, DefaultInvalidConnectionString), output: output)
         {
-            Initialize();
         }
 
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
             DbUtils.Clean();
-        }
-
-        [Fact]
-        public void SnapshotStore_should_save_and_overwrite_snapshot_with_same_sequence_number_unskipped()
-        {
-            TestProbe _senderProbe = CreateTestProbe();
-            var md = Metadata[4];
-            SnapshotStore.Tell(new SaveSnapshot(md, "s-5-modified"), _senderProbe.Ref);
-            var md2 = _senderProbe.ExpectMsg<SaveSnapshotSuccess>().Metadata;
-            Assert.Equal(md.SequenceNr, md2.SequenceNr);
-            SnapshotStore.Tell(new LoadSnapshot(Pid, new SnapshotSelectionCriteria(md.SequenceNr), long.MaxValue), _senderProbe.Ref);
-            var result = _senderProbe.ExpectMsg<LoadSnapshotResult>();
-            Assert.Equal("s-5-modified", result.Snapshot.Snapshot.ToString());
-            Assert.Equal(md.SequenceNr, result.Snapshot.Metadata.SequenceNr);
-            // metadata timestamp may have been changed
         }
     }
 }

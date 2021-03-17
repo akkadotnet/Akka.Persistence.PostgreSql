@@ -6,11 +6,12 @@
 //-----------------------------------------------------------------------
 
 using System;
-using System.Reflection;
+using System.Collections.Immutable;
+using System.Linq;
 using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Configuration;
-using Akka.Persistence.PostgreSql.Journal;
+using Akka.Persistence.TCK;
 using Akka.Persistence.TCK.Journal;
 using FluentAssertions;
 using Npgsql;
@@ -20,7 +21,7 @@ using Xunit.Abstractions;
 namespace Akka.Persistence.PostgreSql.Tests
 {
     [Collection("PostgreSqlSpec")]
-    public class PostgreSqlJournalSpec : JournalSpec
+    public class PostgreSqlJournalBigIntSpec : JournalSpec
     {
         private static Config Initialize(PostgresFixture fixture) 
         {
@@ -39,6 +40,7 @@ namespace Akka.Persistence.PostgreSql.Tests
                             schema-name = public
                             auto-initialize = on
                             connection-string = """ + DbUtils.ConnectionString + @"""
+                            use-bigint-identity-for-ordering-column = on
                         }
                     }
                 }
@@ -50,8 +52,8 @@ namespace Akka.Persistence.PostgreSql.Tests
         // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
         protected override bool SupportsSerialization => false;
 
-        public PostgreSqlJournalSpec(ITestOutputHelper output, PostgresFixture fixture)
-            : base(Initialize(fixture), "PostgreSqlJournalSpec", output: output)
+        public PostgreSqlJournalBigIntSpec(ITestOutputHelper output, PostgresFixture fixture)
+            : base(Initialize(fixture), "PostgreSqlJournalBigIntSpec", output)
         {
             Initialize();
         }
@@ -63,7 +65,7 @@ namespace Akka.Persistence.PostgreSql.Tests
         }
 
         [Fact]
-        public async Task BigSerial_Journal_ordering_column_data_type_should_be_BigSerial()
+        public async Task BigInt_Journal_ordering_column_data_type_should_be_BigInt()
         {
             using (var conn = new NpgsqlConnection(DbUtils.ConnectionString))
             {
@@ -81,12 +83,12 @@ namespace Akka.Persistence.PostgreSql.Tests
                     var reader = await cmd.ExecuteReaderAsync();
                     await reader.ReadAsync();
 
-                    // these are the "fingerprint" of BIGSERIAL
+                    // these are the "fingerprint" of BIGINT ... GENERATED ALWAYS AS IDENTITY
                     reader.GetString(0).Should().Be("ordering");
-                    reader.GetString(1).Should().Be("nextval('event_journal_ordering_seq'::regclass)");
+                    reader[1].Should().BeOfType<DBNull>();
                     reader.GetString(2).Should().Be("bigint");
-                    reader.GetString(3).Should().Be("NO");
-                    reader[4].Should().BeOfType<DBNull>();
+                    reader.GetString(3).Should().Be("YES");
+                    reader.GetString(4).Should().Be("ALWAYS");
                 }
             }
         }

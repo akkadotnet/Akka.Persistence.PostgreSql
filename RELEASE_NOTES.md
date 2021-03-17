@@ -1,3 +1,12 @@
+### 1.4.17 March 13 2021 ###
+Major upgrade and modernization for Akka.Persistence.PostgreSql
+
+- Upgraded to Akka.NET v1.4.17
+- Implemented all Akka.Persistence.Query's correctly
+- [Lots of other fixes and modernizations, which you can read here](https://github.com/akkadotnet/Akka.Persistence.PostgreSql/projects/1).
+
+Akka.Persistence.PostgreSql is now under the umbrella of the Akka.NET project again and will be maintained at roughly the same cadence as the other officially supported Akka.NET plugins.
+
 #### 1.3.9 August 29 2018 ####
 Upgraded for Akka.NET v1.3.9.
 

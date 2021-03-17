@@ -48,7 +48,8 @@ namespace Akka.Persistence.PostgreSql.Journal
                 timeout: config.GetTimeSpan("connection-timeout"),
                 storedAs: storedAs,
                 defaultSerializer: config.GetString("serializer"),
-                useSequentialAccess: config.GetBoolean("sequential-access")),
+                useSequentialAccess: config.GetBoolean("sequential-access"),
+                useBigIntPrimaryKey: config.GetBoolean("use-bigint-identity-for-ordering-column")),
                     Context.System.Serialization,
                     GetTimestampProvider(config.GetString("timestamp-provider")));
 
