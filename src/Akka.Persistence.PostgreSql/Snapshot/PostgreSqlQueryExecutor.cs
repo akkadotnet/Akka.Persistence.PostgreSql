@@ -124,7 +124,7 @@ namespace Akka.Persistence.PostgreSql.Snapshot
             {
                 manifest = stringManifest.Manifest(snapshot);
             }
-            else if (!serializer.IncludeManifest)
+            else if (serializer.IncludeManifest)
             {
                 manifest = snapshotType.TypeQualifiedName();
             }
@@ -149,6 +149,7 @@ namespace Akka.Persistence.PostgreSql.Snapshot
             }
             else
             {
+                type = Type.GetType(manifest, false);
                 serializerId = reader.GetInt32(5);
             }
 
