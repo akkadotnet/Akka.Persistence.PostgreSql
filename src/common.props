@@ -18,7 +18,7 @@
     <PostgresVersion>5.0.3</PostgresVersion>
     <NetStandardLibVersion>netstandard2.0</NetStandardLibVersion>
     <NetFrameworkVersion>net45</NetFrameworkVersion>
-    <TestSdkVersion>16.8.3</TestSdkVersion>
+    <TestSdkVersion>16.9.4</TestSdkVersion>
     <NetCoreTestVersion>netcoreapp3.1</NetCoreTestVersion>
     <NetFrameworkTestVersion>net471</NetFrameworkTestVersion>
   </PropertyGroup>
