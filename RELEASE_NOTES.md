@@ -1,5 +1,6 @@
 ### 1.4.19 June 16 2021 ###
 
+- [Bugfix: Snapshot manifest isn't serialized properly](https://github.com/akkadotnet/Akka.Persistence.PostgreSql/pull/92)
 - Upgraded to [Akka.NET v1.4.19](https://github.com/akkadotnet/akka.net/releases/tag/1.4.19)
 - Upgraded Npgsql to 5.0.7
 
