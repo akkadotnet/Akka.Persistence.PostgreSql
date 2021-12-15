@@ -153,15 +153,6 @@ namespace Akka.Persistence.PostgreSql.Journal
 
             command.Parameters.Add(new NpgsqlParameter("@Payload", serializationResult.DbType) { Value = serializationResult.Payload });
 
-            if (serializer != null)
-            {
-                AddParameter(command, "@SerializerId", DbType.Int32, serializer.Identifier);
-            }
-            else
-            {
-                AddParameter(command, "@SerializerId", DbType.Int32, DBNull.Value);
-            }
-
             if (tags.Count != 0)
             {
                 var tagBuilder = new StringBuilder(";", tags.Sum(x => x.Length) + tags.Count + 1);
