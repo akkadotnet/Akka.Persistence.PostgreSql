@@ -15,7 +15,7 @@ using Xunit.Abstractions;
 namespace Akka.Persistence.PostgreSql.Tests.Query
 {
     [Collection("PostgreSqlSpec")]
-    public class PostgreSqlCurrentAllEventsSpec : AllEventsSpec
+    public class PostgreSqlCurrentAllEventsSpec : CurrentAllEventsSpec
     {
         private static Config Initialize(PostgresFixture fixture)
         {
