@@ -15,7 +15,7 @@
     <XunitVersion>2.4.1</XunitVersion>
     <XunitRunnerVersion>2.4.3</XunitRunnerVersion>
     <AkkaVersion>1.4.29</AkkaVersion>
-    <PostgresVersion>5.0.10</PostgresVersion>
+    <PostgresVersion>6.0.1</PostgresVersion>
     <NetStandardLibVersion>netstandard2.0</NetStandardLibVersion>
     <NetFrameworkVersion>net45</NetFrameworkVersion>
     <TestSdkVersion>17.0.0</TestSdkVersion>
