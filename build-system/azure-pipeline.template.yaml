@@ -7,6 +7,8 @@ parameters:
   scriptArgs: 'all'
   outputDirectory: ''
   timeoutInMinutes: 120
+  useLowVersion: false
+  useHighVersion: true
 
 jobs:
   - job: ${{ parameters.name }}
@@ -14,6 +16,11 @@ jobs:
     timeoutInMinutes: ${{ parameters.timeoutInMinutes }}
     pool:
       vmImage: ${{ parameters.vmImage }}
+    variables:
+      - name: postgre.low
+        value: ${{ parameters.useLowVersion }}
+      - name: postgre.high
+        value: ${{ parameters.useHighVersion }}
     steps:
       - checkout: self  # self represents the repo where the initial Pipelines YAML file was found
         clean: false  # whether to fetch clean each time
