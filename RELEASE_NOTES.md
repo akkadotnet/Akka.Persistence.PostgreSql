@@ -1,3 +1,10 @@
+### 1.4.32 January 18 2022 ###
+- Upgraded to [Akka.NET v1.4.32](https://github.com/akkadotnet/akka.net/releases/tag/1.4.32)
+- [Upgraded Npgsql to 6.0.2](https://github.com/akkadotnet/Akka.Persistence.PostgreSql/pull/128)
+- [Changed Npgsql package version from explicit to ranged](https://github.com/akkadotnet/Akka.Persistence.PostgreSql/pull/126)
+
+ In 1.4.31, we bumped the Npgsql package to 6.0.1 and introduced a regression bug for users who uses Entity Framework by locking them from using .NET Core 3.1. We're fixing this bug in 1.4.32 by using ranged versioning to allow users to use Npgsql 5.0.11 and not forced to update to .NET 6.0.  
+
 ### 1.4.31 December 20 2021 ###
 - Upgraded to [Akka.NET v1.4.31](https://github.com/akkadotnet/akka.net/releases/tag/1.4.31)
 
