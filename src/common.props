@@ -13,7 +13,7 @@
   </PropertyGroup>
   <PropertyGroup>
     <XunitVersion>2.4.1</XunitVersion>
-    <XunitRunnerVersion>2.4.3</XunitRunnerVersion>
+    <XunitRunnerVersion>2.4.5</XunitRunnerVersion>
     <AkkaVersion>1.4.39</AkkaVersion>
     <PostgresLowVersion>5.0.11</PostgresLowVersion>
     <PostgresHighVersion>6.0.2</PostgresHighVersion>
