@@ -2,7 +2,7 @@
   <PropertyGroup>
     <Copyright>Copyright © 2013-2017 Akka.NET Team</Copyright>
     <Authors>Akka.NET Team</Authors>
-    <VersionPrefix>1.3.9</VersionPrefix>
+    <VersionPrefix>1.4.35</VersionPrefix>
     <PackageIconUrl>http://getakka.net/images/akkalogo.png</PackageIconUrl>
     <PackageProjectUrl>https://github.com/akkadotnet/Akka.Persistence.PostgreSql</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/akkadotnet/Akka.Persistence.PostgreSql/blob/dev/LICENSE.md</PackageLicenseUrl>
@@ -19,6 +19,7 @@
     <PostgresHighVersion>6.0.7</PostgresHighVersion>
     <PostgresVersion>[$(PostgresLowVersion), $(PostgresHighVersion)]</PostgresVersion>
     <NetStandardLibVersion>netstandard2.0</NetStandardLibVersion>
+    <NetVersion>.net6.0</NetVersion>
     <NetFrameworkVersion>net45</NetFrameworkVersion>
     <TestSdkVersion>17.3.2</TestSdkVersion>
     <NetCoreTestVersion>netcoreapp3.1</NetCoreTestVersion>
