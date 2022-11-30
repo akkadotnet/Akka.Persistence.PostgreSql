@@ -1,4 +1,8 @@
-#### 1.4.35 March 23 2022 ####
+### 1.4.45 October 21 2022 ###
+* [Update Akka.NET to v1.4.45](https://github.com/akkadotnet/akka.net/releases/tag/1.4.45)
+* [Bump Npgsql from 6.0.2 to 6.0.7](https://github.com/akkadotnet/Akka.Persistence.PostgreSql/pull/163)
+
+### 1.4.35 March 23 2022 ###
 * [Update Akka.NET to v1.4.35](https://github.com/akkadotnet/akka.net/releases/tag/1.4.35)
 
 ### 1.4.32 January 18 2022 ###
