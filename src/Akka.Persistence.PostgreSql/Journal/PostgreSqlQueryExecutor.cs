@@ -33,6 +33,7 @@ namespace Akka.Persistence.PostgreSql.Journal
             : base(configuration, serialization, timestampProvider)
         {
             var storedAs = configuration.StoredAs.ToString().ToUpperInvariant();
+            var tagsColumnSize = configuration.TagsColumnSize;
             
             CreateEventsJournalSql =  $@"
                 CREATE TABLE IF NOT EXISTS {Configuration.FullJournalTableName} (
@@ -43,7 +44,7 @@ namespace Akka.Persistence.PostgreSql.Journal
                     {Configuration.TimestampColumnName} BIGINT NOT NULL,
                     {Configuration.ManifestColumnName} VARCHAR(500) NOT NULL,
                     {Configuration.PayloadColumnName} {storedAs} NOT NULL,
-                    {Configuration.TagsColumnName} VARCHAR(100) NULL,
+                    {Configuration.TagsColumnName} VARCHAR({tagsColumnSize}) NULL,
                     {Configuration.SerializerIdColumnName} INTEGER NULL,
                     CONSTRAINT {Configuration.JournalEventsTableName}_uq UNIQUE ({Configuration.PersistenceIdColumnName}, {Configuration.SequenceNrColumnName})
                 );";
@@ -245,6 +246,7 @@ namespace Akka.Persistence.PostgreSql.Journal
         public readonly StoredAsType StoredAs;
         public readonly JsonSerializerSettings JsonSerializerSettings;
         public readonly bool UseBigIntPrimaryKey;
+        public readonly int TagsColumnSize;
 
         public PostgreSqlQueryConfiguration(
             string schemaName,
@@ -264,7 +266,8 @@ namespace Akka.Persistence.PostgreSql.Journal
             string defaultSerializer, 
             JsonSerializerSettings jsonSerializerSettings = null, 
             bool useSequentialAccess = true, 
-            bool useBigIntPrimaryKey = false)
+            bool useBigIntPrimaryKey = false,
+            int tagsColumnSize = 2000)
             : base(schemaName, journalEventsTableName, metaTableName, persistenceIdColumnName, sequenceNrColumnName,
                   payloadColumnName, manifestColumnName, timestampColumnName, isDeletedColumnName, tagsColumnName, orderingColumn, 
                 serializerIdColumnName, timeout, defaultSerializer, useSequentialAccess)
@@ -275,6 +278,7 @@ namespace Akka.Persistence.PostgreSql.Journal
             {
                 ContractResolver = new AkkaContractResolver()
             };
+            TagsColumnSize = tagsColumnSize;
         }
     }
 }
