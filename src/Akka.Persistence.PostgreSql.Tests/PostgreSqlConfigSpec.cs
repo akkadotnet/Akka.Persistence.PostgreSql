@@ -32,6 +32,7 @@ namespace Akka.Persistence.PostgreSql.Tests
             Assert.False(config.GetBoolean("auto-initialize"));
             Assert.Equal("Akka.Persistence.Sql.Common.Journal.DefaultTimestampProvider, Akka.Persistence.Sql.Common", config.GetString("timestamp-provider"));
             Assert.False(config.GetBoolean("sequential-access"));
+            Assert.Equal(2000, config.GetInt("tags-column-size"));
         }
 
         [Fact]
