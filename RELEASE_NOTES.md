@@ -1,3 +1,7 @@
+### 1.4.46 November 30 2022 ###
+* [Update Akka.NET to v1.4.46](https://github.com/akkadotnet/akka.net/releases/tag/1.4.46)
+* [Add `tag-column-size` HOCON setting to modify journal table Tags column size](https://github.com/akkadotnet/Akka.Persistence.PostgreSql/pull/167)
+
 ### 1.4.45 October 21 2022 ###
 * [Update Akka.NET to v1.4.45](https://github.com/akkadotnet/akka.net/releases/tag/1.4.45)
 * [Bump Npgsql from 6.0.2 to 6.0.7](https://github.com/akkadotnet/Akka.Persistence.PostgreSql/pull/163)
