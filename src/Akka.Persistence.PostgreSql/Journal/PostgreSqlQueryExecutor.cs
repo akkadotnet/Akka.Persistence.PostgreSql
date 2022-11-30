@@ -263,11 +263,37 @@ namespace Akka.Persistence.PostgreSql.Journal
             string serializerIdColumnName,
             TimeSpan timeout,
             StoredAsType storedAs,
-            string defaultSerializer, 
+            string defaultSerializer,
+            JsonSerializerSettings jsonSerializerSettings = null,
+            bool useSequentialAccess = true,
+            bool useBigIntPrimaryKey = false)
+            : this(schemaName, journalEventsTableName, metaTableName, persistenceIdColumnName, sequenceNrColumnName,
+                payloadColumnName, manifestColumnName, timestampColumnName, isDeletedColumnName, tagsColumnName,
+                orderingColumn, serializerIdColumnName, timeout, storedAs, defaultSerializer, 100, jsonSerializerSettings,
+                useSequentialAccess, useBigIntPrimaryKey)
+        {
+        }
+        
+        public PostgreSqlQueryConfiguration(
+            string schemaName,
+            string journalEventsTableName,
+            string metaTableName,
+            string persistenceIdColumnName,
+            string sequenceNrColumnName,
+            string payloadColumnName,
+            string manifestColumnName,
+            string timestampColumnName,
+            string isDeletedColumnName,
+            string tagsColumnName,
+            string orderingColumn,
+            string serializerIdColumnName,
+            TimeSpan timeout,
+            StoredAsType storedAs,
+            string defaultSerializer,
+            int tagsColumnSize = 2000, 
             JsonSerializerSettings jsonSerializerSettings = null, 
             bool useSequentialAccess = true, 
-            bool useBigIntPrimaryKey = false,
-            int tagsColumnSize = 2000)
+            bool useBigIntPrimaryKey = false)
             : base(schemaName, journalEventsTableName, metaTableName, persistenceIdColumnName, sequenceNrColumnName,
                   payloadColumnName, manifestColumnName, timestampColumnName, isDeletedColumnName, tagsColumnName, orderingColumn, 
                 serializerIdColumnName, timeout, defaultSerializer, useSequentialAccess)
