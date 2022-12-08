@@ -130,7 +130,15 @@ namespace Akka.Persistence.PostgreSql.Snapshot
                 manifest = QualifiedName(snapshot);
 
             AddParameter(command, "@Manifest", DbType.String, manifest);
-            AddParameter(command, "@SerializerId", DbType.Int32, serializer.Identifier);
+
+            if (hasSerializer)
+            {
+                AddParameter(command, "@SerializerId", DbType.Int32, serializer.Identifier);
+            }
+            else
+            {
+                AddParameter(command, "@SerializerId", DbType.Int32, DBNull.Value);
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
