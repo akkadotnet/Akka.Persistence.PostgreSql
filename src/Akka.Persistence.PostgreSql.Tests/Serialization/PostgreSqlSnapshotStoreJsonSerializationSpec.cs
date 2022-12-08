@@ -7,6 +7,7 @@
 
 using Akka.Configuration;
 using Akka.Persistence.TCK.Serialization;
+using Akka.Util.Internal;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -47,6 +48,40 @@ namespace Akka.Persistence.PostgreSql.Tests.Serialization
                 }}
                 akka.test.single-expect-default = 10s")
                 .WithFallback(PostgreSqlPersistence.DefaultConfiguration());
+        }
+        
+        [Fact]
+        public override void SnapshotStore_should_serialize_Payload()
+        {
+            var probe = CreateTestProbe();
+
+            var snapshot = new Test.MySnapshot("a");
+
+            var metadata = new SnapshotMetadata(Pid, 1);
+            SnapshotStore.Tell(new SaveSnapshot(metadata, snapshot), probe.Ref);
+            probe.ExpectMsg<SaveSnapshotSuccess>();
+
+            SnapshotStore.Tell(new LoadSnapshot(Pid, SnapshotSelectionCriteria.Latest, long.MaxValue), probe.Ref);
+            probe.ExpectMsg<LoadSnapshotResult>(s => 
+                s.Snapshot.Snapshot is Test.MySnapshot
+                && s.Snapshot.Snapshot.AsInstanceOf<Test.MySnapshot>().Data.Equals("a"));
+        }
+
+        [Fact]
+        public override void SnapshotStore_should_serialize_Payload_with_string_manifest()
+        {
+            var probe = CreateTestProbe();
+
+            var snapshot = new Test.MySnapshot2("a");
+
+            var metadata = new SnapshotMetadata(Pid, 1);
+            SnapshotStore.Tell(new SaveSnapshot(metadata, snapshot), probe.Ref);
+            probe.ExpectMsg<SaveSnapshotSuccess>();
+
+            SnapshotStore.Tell(new LoadSnapshot(Pid, SnapshotSelectionCriteria.Latest, long.MaxValue), probe.Ref);
+            probe.ExpectMsg<LoadSnapshotResult>(s => 
+                s.Snapshot.Snapshot is Test.MySnapshot2
+                && s.Snapshot.Snapshot.AsInstanceOf<Test.MySnapshot2>().Data.Equals("a"));
         }
     }
 }
