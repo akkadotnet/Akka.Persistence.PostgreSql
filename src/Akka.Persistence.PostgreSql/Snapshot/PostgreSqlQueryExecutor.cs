@@ -14,6 +14,7 @@ using NpgsqlTypes;
 using System;
 using System.Data;
 using System.Data.Common;
+using System.Runtime.CompilerServices;
 
 namespace Akka.Persistence.PostgreSql.Snapshot
 {
@@ -116,22 +117,25 @@ namespace Akka.Persistence.PostgreSql.Snapshot
 
         protected override void SetManifestParameters(object snapshot, DbCommand command)
         {
-            var snapshotType = snapshot.GetType();
-            var serializer = Serialization.FindSerializerForType(snapshotType, Configuration.DefaultSerializer);
+            var serializationResult = _serialize(snapshot);
+            var serializer = serializationResult.Serializer;
+            var hasSerializer = serializer != null;
 
-            var manifest = "";
-            if (serializer is SerializerWithStringManifest stringManifest)
-            {
-                manifest = stringManifest.Manifest(snapshot);
-            }
-            else if (serializer.IncludeManifest)
-            {
-                manifest = snapshotType.TypeQualifiedName();
-            }
+            string manifest = "";
+            if (hasSerializer && serializer is SerializerWithStringManifest)
+                manifest = ((SerializerWithStringManifest)serializer).Manifest(serializationResult.Payload);
+            else if (hasSerializer && serializer.IncludeManifest)
+                manifest = QualifiedName(serializationResult.Payload);
+            else
+                manifest = QualifiedName(snapshot);
 
             AddParameter(command, "@Manifest", DbType.String, manifest);
             AddParameter(command, "@SerializerId", DbType.Int32, serializer.Identifier);
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static string QualifiedName(object payload)
+            => payload.GetType().TypeQualifiedName();
 
         protected override SelectedSnapshot ReadSnapshot(DbDataReader reader)
         {
