@@ -1,5 +1,5 @@
 ﻿//-----------------------------------------------------------------------
-// <copyright file="PostgreSqlSnapshotStoreSerializationSpec.cs" company="Akka.NET Project">
+// <copyright file="PostgreSqlJournalSerializationSpec.cs" company="Akka.NET Project">
 //     Copyright (C) 2009-2021 Lightbend Inc. <http://www.lightbend.com>
 //     Copyright (C) 2013-2021 .NET Foundation <https://github.com/akkadotnet/akka.net>
 // </copyright>
@@ -13,10 +13,10 @@ using Xunit.Abstractions;
 namespace Akka.Persistence.PostgreSql.Tests.Serialization
 {
     [Collection("PostgreSqlSpec")]
-    public class PostgreSqlSnapshotStoreSerializationSpec : SnapshotStoreSerializationSpec
+    public class PostgreSqlJournalJsonSerializationSpec : JournalSerializationSpec
     {
-        public PostgreSqlSnapshotStoreSerializationSpec(ITestOutputHelper output, PostgresFixture fixture)
-            : base(CreateSpecConfig(fixture), "PostgreSqlSnapshotStoreSerializationSpec", output)
+        public PostgreSqlJournalJsonSerializationSpec(ITestOutputHelper output, PostgresFixture fixture)
+            : base(CreateSpecConfig(fixture), "PostgreSqlJournalSerializationSpec", output)
         {
         }
 
@@ -31,7 +31,7 @@ namespace Akka.Persistence.PostgreSql.Tests.Serialization
                     journal {{
                         plugin = ""akka.persistence.journal.postgresql""
                         postgresql {{
-                            stored-as = bytea
+                            stored-as = json
                             connection-string = ""{DbUtils.ConnectionString}""
                             auto-initialize = on
                         }}
@@ -39,7 +39,7 @@ namespace Akka.Persistence.PostgreSql.Tests.Serialization
                     snapshot-store {{
                         plugin = ""akka.persistence.snapshot-store.postgresql""
                         postgresql {{
-                            stored-as = bytea
+                            stored-as = json
                             connection-string = ""{DbUtils.ConnectionString}""
                             auto-initialize = on
                         }}
@@ -47,6 +47,11 @@ namespace Akka.Persistence.PostgreSql.Tests.Serialization
                 }}
                 akka.test.single-expect-default = 10s")
                 .WithFallback(PostgreSqlPersistence.DefaultConfiguration());
+        }
+
+        [Fact(Skip = "Sql plugin does not support EventAdapter.Manifest")]
+        public override void Journal_should_serialize_Persistent_with_EventAdapter_manifest()
+        {
         }
     }
 }

@@ -5,17 +5,20 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
+using Akka.Actor;
 using Akka.Configuration;
 using Akka.Persistence.TCK.Serialization;
+using FluentAssertions;
+using Newtonsoft.Json;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Akka.Persistence.PostgreSql.Tests.Serialization
 {
     [Collection("PostgreSqlSpec")]
-    public class PostgreSqlSnapshotStoreSerializationSpec : SnapshotStoreSerializationSpec
+    public class PostgreSqlSnapshotStoreJsonBSerializationSpec : SnapshotStoreSerializationSpec
     {
-        public PostgreSqlSnapshotStoreSerializationSpec(ITestOutputHelper output, PostgresFixture fixture)
+        public PostgreSqlSnapshotStoreJsonBSerializationSpec(ITestOutputHelper output, PostgresFixture fixture)
             : base(CreateSpecConfig(fixture), "PostgreSqlSnapshotStoreSerializationSpec", output)
         {
         }
@@ -31,7 +34,7 @@ namespace Akka.Persistence.PostgreSql.Tests.Serialization
                     journal {{
                         plugin = ""akka.persistence.journal.postgresql""
                         postgresql {{
-                            stored-as = bytea
+                            stored-as = jsonb
                             connection-string = ""{DbUtils.ConnectionString}""
                             auto-initialize = on
                         }}
@@ -39,7 +42,7 @@ namespace Akka.Persistence.PostgreSql.Tests.Serialization
                     snapshot-store {{
                         plugin = ""akka.persistence.snapshot-store.postgresql""
                         postgresql {{
-                            stored-as = bytea
+                            stored-as = jsonb
                             connection-string = ""{DbUtils.ConnectionString}""
                             auto-initialize = on
                         }}
