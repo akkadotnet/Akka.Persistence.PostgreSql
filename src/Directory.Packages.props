@@ -5,7 +5,19 @@
   <!-- App dependencies -->
   <ItemGroup>
     <PackageVersion Include="Akka.Persistence.Sql.Common" Version="$(AkkaVersion)"/>
-    <PackageVersion Include="Npgsql" Version="$(PostgresVersion)" />
+    <PackageVersion Condition="'$(POSTGRE_VERSION)' == '' And '$(POSTGRE_LOW)' == 'true'" Include="Npgsql" Version="$(PostgresLowVersion)" />
+    
+    <!-- 
+    Use environment variable POSTGRE_HIGH=true to build against the _HIGHEST_ ranged version of Npgsql package
+    Make sure that POSTGRE_VERSION variable is _NOT_ set or this flag would not take effect 
+    -->
+    <PackageVersion Condition="'$(POSTGRE_VERSION)' == '' And '$(POSTGRE_HIGH)' == 'true'" Include="Npgsql" Version="$(PostgresHighVersion)" />
+
+    <!-- 
+    Use environment variable POSTGRE_VERSION={version} to build against a _SPECIFIC_ version of Npgsql package
+    This environment variable trumps over all other version variables 
+    -->
+    <PackageVersion Condition="'$(POSTGRE_VERSION)' != ''" Include="Npgsql" Version="$(POSTGRE_VERSION)" />
   </ItemGroup>
 
   <!-- Test dependencies -->  
