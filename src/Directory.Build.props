@@ -1,8 +1,8 @@
 <Project>
   <PropertyGroup>
-    <Copyright>Copyright © 2013-2017 Akka.NET Team</Copyright>
+    <Copyright>Copyright © 2013-2023 Akka.NET Team</Copyright>
     <Authors>Akka.NET Team</Authors>
-    <VersionPrefix>1.3.9</VersionPrefix>
+    <VersionPrefix>1.4.46</VersionPrefix>
     <PackageIconUrl>http://getakka.net/images/akkalogo.png</PackageIconUrl>
     <PackageProjectUrl>https://github.com/akkadotnet/Akka.Persistence.PostgreSql</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/akkadotnet/Akka.Persistence.PostgreSql/blob/dev/LICENSE.md</PackageLicenseUrl>
@@ -19,14 +19,12 @@
     <PostgresHighVersion>6.0.7</PostgresHighVersion>
     <PostgresVersion>[$(PostgresLowVersion), $(PostgresHighVersion)]</PostgresVersion>
     <NetStandardLibVersion>netstandard2.0</NetStandardLibVersion>
-    <NetFrameworkVersion>net45</NetFrameworkVersion>
     <TestSdkVersion>17.4.1</TestSdkVersion>
-    <NetCoreTestVersion>netcoreapp3.1</NetCoreTestVersion>
-    <NetFrameworkTestVersion>net471</NetFrameworkTestVersion>
+    <NetCoreTestVersion>net7.0</NetCoreTestVersion>
+    <NetFrameworkTestVersion>net48</NetFrameworkTestVersion>
   </PropertyGroup>
   <PropertyGroup>
-    <PackageReleaseNotes>Upgraded for Akka.NET v1.3.9.
-Other Fixes and Improvements**
-[Bugfix: Loading shapshot error](https://github.com/AkkaNetContrib/Akka.Persistence.PostgreSql/issues/57)</PackageReleaseNotes>
+    <PackageReleaseNotes>[Update Akka.NET to v1.4.46](https://github.com/akkadotnet/akka.net/releases/tag/1.4.46)
+[Add `tag-column-size` HOCON setting to modify journal table Tags column size](https://github.com/akkadotnet/Akka.Persistence.PostgreSql/pull/167)</PackageReleaseNotes>
   </PropertyGroup>
 </Project>

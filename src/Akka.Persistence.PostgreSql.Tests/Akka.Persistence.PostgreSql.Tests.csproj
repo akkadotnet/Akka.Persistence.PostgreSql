@@ -1,35 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
-  <Import Project="..\common.props" />
   <PropertyGroup>
     <TargetFrameworks>$(NetFrameworkTestVersion);$(NetCoreTestVersion)</TargetFrameworks>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Docker.DotNet" Version="3.125.12" />
-    <PackageReference Include="Akka.Persistence.Sql.TestKit" Version="$(AkkaVersion)" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(TestSdkVersion)" />
-    <PackageReference Include="xunit" Version="$(XunitVersion)" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="$(XunitRunnerVersion)" />
-    
-    <!-- 
-    Use environment variable POSTGRE_LOW=true to build against the _LOWEST_ ranged version of Npgsql package 
-    Make sure that POSTGRE_VERSION variable is _NOT_ set or this flag would not take effect 
-    -->
-    <PackageReference Condition="'$(POSTGRE_VERSION)' == '' And '$(POSTGRE_LOW)' == 'true'" Include="Npgsql" Version="$(PostgresLowVersion)" />
-    
-    <!-- 
-    Use environment variable POSTGRE_HIGH=true to build against the _HIGHEST_ ranged version of Npgsql package
-    Make sure that POSTGRE_VERSION variable is _NOT_ set or this flag would not take effect 
-    -->
-    <PackageReference Condition="'$(POSTGRE_VERSION)' == '' And '$(POSTGRE_HIGH)' == 'true'" Include="Npgsql" Version="$(PostgresHighVersion)" />
-
-    <!-- 
-    Use environment variable POSTGRE_VERSION={version} to build against a _SPECIFIC_ version of Npgsql package
-    This environment variable trumps over all other version variables 
-    -->
-    <PackageReference Condition="'$(POSTGRE_VERSION)' != ''" Include="Npgsql" Version="$(POSTGRE_VERSION)" />
+    <PackageReference Include="Docker.DotNet"/>
+    <PackageReference Include="Akka.Persistence.Sql.TestKit" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk"/>
+    <PackageReference Include="xunit"/>
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Npgsql" />
   </ItemGroup>
 
   <ItemGroup>

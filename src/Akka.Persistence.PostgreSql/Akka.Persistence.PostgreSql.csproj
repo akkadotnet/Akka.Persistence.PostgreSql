@@ -1,6 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
-  <Import Project="..\common.props" />
   <PropertyGroup>
     <AssemblyTitle>Akka.Persistence.PostgreSql</AssemblyTitle>
     <Description>Akka Persistence journal and snapshot store backed by PostgreSql database.</Description>
@@ -9,18 +7,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="postgresql.conf" />
-  </ItemGroup>
-
-  <ItemGroup>
     <EmbeddedResource Include="postgresql.conf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Npgsql" Version="$(PostgresVersion)" />
-    <PackageReference Include="Akka.Persistence.Sql.Common" Version="$(AkkaVersion)" />
+    <PackageReference Include="Npgsql" />
+    <PackageReference Include="Akka.Persistence.Sql.Common" />
   </ItemGroup>
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
