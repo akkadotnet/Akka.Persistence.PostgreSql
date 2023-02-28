@@ -29,10 +29,10 @@ jobs:
       displayName: 'Linux PR Validation (Npgsql low version)'
       vmImage: 'ubuntu-20.04'
       scriptFileName: './build.sh'
-      scriptArgs: RunTestsNetCore
+      scriptArgs: RunTestsNet
       outputDirectory: 'TestResults'
       useLowVersion: true
-      useHighVersion: false      
+      useHighVersion: false
       artifactName: 'net_core_tests_low-$(Build.BuildId)'
 
   - template: azure-pipeline.template.yaml
@@ -41,7 +41,7 @@ jobs:
       displayName: 'Linux PR Validation (Npgsql high version)'
       vmImage: 'ubuntu-20.04'
       scriptFileName: './build.sh'
-      scriptArgs: RunTestsNetCore
+      scriptArgs: RunTestsNet
       outputDirectory: 'TestResults'
       useLowVersion: false
       useHighVersion: true
