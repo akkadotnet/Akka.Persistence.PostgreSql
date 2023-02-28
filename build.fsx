@@ -21,7 +21,7 @@ let outputTests = __SOURCE_DIRECTORY__ @@ "TestResults"
 let outputPerfTests = __SOURCE_DIRECTORY__ @@ "PerfResults"
 let outputBinaries = output @@ "binaries"
 let outputNuGet = output @@ "nuget"
-let outputBinariesNet47 = outputBinaries @@ "net471"
+let outputBinariesNet48 = outputBinaries @@ "net48"
 let outputBinariesNetStandard = outputBinaries @@ "netstandard2.0"
 
 // Read release notes and version
@@ -44,9 +44,8 @@ let versionSuffix =
     | str -> str
 
 // Configuration values for tests
-let testNetFrameworkVersion = "net471"
-let testNetCoreVersion = "netcoreapp3.1"
-let testNetVersion = "net5.0"
+let testNetFrameworkVersion = "net48"
+let testNetVersion = "net7.0"
     
 printfn "Assembly version: %s\nNuget version; %s\n" releaseNotes.AssemblyVersion releaseNotes.NugetVersion
 
@@ -62,7 +61,7 @@ Target "Clean" (fun _ ->
     CleanDir outputPerfTests
     CleanDir outputBinaries
     CleanDir outputNuGet
-    CleanDir outputBinariesNet47
+    CleanDir outputBinariesNet48
     CleanDir outputBinariesNetStandard
     CleanDir "docs/_site"
 
@@ -115,22 +114,6 @@ Target "Build" (fun _ ->
 // Run tests
 //--------------------------------------------------------------------------------
 
-type Runtime =
-    | NetCore
-    | Net
-    | NetFramework
-
-let getTestAssembly runtime project =
-    let assemblyPath = match runtime with
-                        | NetCore -> !! ("src" @@ "**" @@ "bin" @@ "Release" @@ testNetCoreVersion @@ fileNameWithoutExt project + ".dll")
-                        | NetFramework -> !! ("src" @@ "**" @@ "bin" @@ "Release" @@ testNetFrameworkVersion @@ fileNameWithoutExt project + ".dll")
-                        | Net -> !! ("src" @@ "**" @@ "bin" @@ "Release" @@ testNetVersion @@ fileNameWithoutExt project + ".dll")
-
-    if Seq.isEmpty assemblyPath then
-        None
-    else
-        Some (assemblyPath |> Seq.head)
-
 module internal ResultHandling =
     let (|OK|Failure|) = function
         | 0 -> OK
@@ -171,7 +154,7 @@ Target "RunTests" <| fun _ ->
     CreateDir outputTests
     projects |> Seq.iter (runSingleProject)
 
-Target "RunTestsNetCore" <| fun _ ->
+Target "RunTestsNet" <| fun _ ->
     let projects =
         match (isWindows) with
             | true -> !! "./src/**/*.Tests.*sproj"
@@ -181,7 +164,7 @@ Target "RunTestsNetCore" <| fun _ ->
 
     let runSingleProject project =
         let arguments =
-            (sprintf "test -c Release --no-build --logger:trx --logger:\"console;verbosity=normal\" --framework %s --results-directory \"%s\" -- -parallel none" testNetCoreVersion outputTests)
+            (sprintf "test -c Release --no-build --logger:trx --logger:\"console;verbosity=normal\" --framework %s --results-directory \"%s\" -- -parallel none" testNetVersion outputTests)
 
         let result = ExecProcess(fun info ->
             info.FileName <- "dotnet"
@@ -364,7 +347,7 @@ Target "Nuget" DoNothing
 
 // test dependencies
 "Build" ==> "RunTests"
-"Build" ==> "RunTestsNetCore"
+"Build" ==> "RunTestsNet"
 
 // nuget dependencies
 "BuildRelease" ==> "CreateNuget"
@@ -372,7 +355,7 @@ Target "Nuget" DoNothing
 
 "BuildRelease" ==> "All"
 "RunTests" ==> "All"
-"RunTestsNetCore" ==> "All"
+"RunTestsNet" ==> "All"
 "Nuget" ==> "All"
 
 RunTargetOrDefault "Help"
