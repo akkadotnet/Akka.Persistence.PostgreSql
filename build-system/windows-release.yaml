@@ -22,10 +22,9 @@ variables:
     value: akkadotnet/Akka.Persistence.PostgreSql
 steps:
 - task: UseDotNet@2
-  displayName: 'Use .NET Core Runtime 3.1.10'
+  displayName: 'Use .NET 7'
   inputs:
-    packageType: runtime
-    version: 3.1.10
+    version: '7.x'
 - task: BatchScript@1
   displayName: 'FAKE Build'
   inputs:
