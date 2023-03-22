@@ -1,30 +1,31 @@
 <Project>
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Generated.props', '$(MSBuildThisFileDirectory)'))" />
+
   <PropertyGroup>
     <Copyright>Copyright © 2013-2023 Akka.NET Team</Copyright>
     <Authors>Akka.NET Team</Authors>
-    <VersionPrefix>1.4.46</VersionPrefix>
     <PackageIconUrl>http://getakka.net/images/akkalogo.png</PackageIconUrl>
     <PackageProjectUrl>https://github.com/akkadotnet/Akka.Persistence.PostgreSql</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/akkadotnet/Akka.Persistence.PostgreSql/blob/dev/LICENSE.md</PackageLicenseUrl>
     <PackageTags>akka;actors;actor model;Akka;concurrency;Postgres;PostgreSql</PackageTags>
   </PropertyGroup>
+
   <PropertyGroup>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
+
   <PropertyGroup>
-    <XunitVersion>2.4.2</XunitVersion>
-    <XunitRunnerVersion>2.4.5</XunitRunnerVersion>
+    <NetStandardLibVersion>netstandard2.0</NetStandardLibVersion>
+    <NetCoreTestVersion>net7.0</NetCoreTestVersion>
+    <NetFrameworkTestVersion>net48</NetFrameworkTestVersion>
+
     <AkkaVersion>1.5.1</AkkaVersion>
     <PostgresLowVersion>5.0.11</PostgresLowVersion>
     <PostgresHighVersion>7.0.2</PostgresHighVersion>
     <PostgresVersion>[$(PostgresLowVersion), $(PostgresHighVersion)]</PostgresVersion>
-    <NetStandardLibVersion>netstandard2.0</NetStandardLibVersion>
+
     <TestSdkVersion>17.4.1</TestSdkVersion>
-    <NetCoreTestVersion>net7.0</NetCoreTestVersion>
-    <NetFrameworkTestVersion>net48</NetFrameworkTestVersion>
-  </PropertyGroup>
-  <PropertyGroup>
-    <PackageReleaseNotes>[Update Akka.NET to v1.4.46](https://github.com/akkadotnet/akka.net/releases/tag/1.4.46)
-[Add `tag-column-size` HOCON setting to modify journal table Tags column size](https://github.com/akkadotnet/Akka.Persistence.PostgreSql/pull/167)</PackageReleaseNotes>
+    <XunitVersion>2.4.2</XunitVersion>
+    <XunitRunnerVersion>2.4.5</XunitRunnerVersion>
   </PropertyGroup>
 </Project>
