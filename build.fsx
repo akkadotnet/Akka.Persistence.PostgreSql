@@ -46,7 +46,7 @@ let versionSuffix =
 // Configuration values for tests
 let testNetFrameworkVersion = "net48"
 let testNetVersion = "net7.0"
-    
+
 printfn "Assembly version: %s\nNuget version; %s\n" releaseNotes.AssemblyVersion releaseNotes.NugetVersion
 
 //--------------------------------------------------------------------------------
@@ -75,19 +75,19 @@ Target "Clean" (fun _ ->
 
 Target "RestorePackages" (fun _ ->
     DotNetCli.Restore
-        (fun p -> 
+        (fun p ->
             { p with
                 Project = solution
                 NoCache = true })
 )
 
 //--------------------------------------------------------------------------------
-// Generate AssemblyInfo files with the version for release notes 
+// Generate AssemblyInfo files with the version for release notes
 //--------------------------------------------------------------------------------
 
 Target "AssemblyInfo" (fun _ ->
-    XmlPokeInnerText "./src/Directory.Build.props" "//Project/PropertyGroup/VersionPrefix" releaseNotes.AssemblyVersion    
-    XmlPokeInnerText "./src/Directory.Build.props" "//Project/PropertyGroup/PackageReleaseNotes" (releaseNotes.Notes |> String.concat "\n")
+    XmlPokeInnerText "./src/Directory.Generated.props" "//Project/PropertyGroup/VersionPrefix" releaseNotes.AssemblyVersion
+    XmlPokeInnerText "./src/Directory.Generated.props" "//Project/PropertyGroup/PackageReleaseNotes" (releaseNotes.Notes |> String.concat "\n")
 )
 
 //--------------------------------------------------------------------------------
@@ -95,16 +95,16 @@ Target "AssemblyInfo" (fun _ ->
 //--------------------------------------------------------------------------------
 
 Target "Build" (fun _ ->
-    let additionalArgs = if versionSuffix.Length > 0 then [sprintf "/p:VersionSuffix=%s" versionSuffix] else []  
+    let additionalArgs = if versionSuffix.Length > 0 then [sprintf "/p:VersionSuffix=%s" versionSuffix] else []
 
     let projects = !! "./**/*.csproj"
 
     let runSingleProject project =
         DotNetCli.Build
-            (fun p -> 
+            (fun p ->
                 { p with
                     Project = project
-                    Configuration = configuration 
+                    Configuration = configuration
                     AdditionalArgs = additionalArgs })
 
     projects |> Seq.iter (runSingleProject)
@@ -177,18 +177,18 @@ Target "RunTestsNet" <| fun _ ->
     projects |> Seq.iter (runSingleProject)
 
 //--------------------------------------------------------------------------------
-// Nuget targets 
+// Nuget targets
 //--------------------------------------------------------------------------------
 
-Target "CreateNuget" (fun _ ->    
+Target "CreateNuget" (fun _ ->
     CreateDir outputNuGet // need this to stop Azure pipelines copy stage from error-ing out
-    let projects = !! "src/**/*.csproj" 
+    let projects = !! "src/**/*.csproj"
                    -- "src/**/*Tests.csproj" // Don't publish unit tests
                    -- "src/**/*Tests*.csproj"
 
     let runSingleProject project =
         DotNetCli.Pack
-            (fun p -> 
+            (fun p ->
                 { p with
                     Project = project
                     Configuration = configuration
@@ -210,8 +210,8 @@ Target "PublishNuget" (fun _ ->
     if (not (source = "") && not (apiKey = "") && shouldPublishSymbolsPackages) then
         let runSingleProject project =
             DotNetCli.RunCommand
-                (fun p -> 
-                    { p with 
+                (fun p ->
+                    { p with
                         TimeOut = TimeSpan.FromMinutes 10. })
                 (sprintf "nuget push %s --api-key %s --source %s --symbol-source %s" project apiKey source symbolSource)
 
@@ -219,8 +219,8 @@ Target "PublishNuget" (fun _ ->
     else if (not (source = "") && not (apiKey = "") && not shouldPublishSymbolsPackages) then
         let runSingleProject project =
             DotNetCli.RunCommand
-                (fun p -> 
-                    { p with 
+                (fun p ->
+                    { p with
                         TimeOut = TimeSpan.FromMinutes 10. })
                 (sprintf "nuget push %s --api-key %s --source %s" project apiKey source)
 
@@ -237,7 +237,7 @@ FinalTarget "KillCreatedProcesses" (fun _ ->
 )
 
 //--------------------------------------------------------------------------------
-// Help 
+// Help
 //--------------------------------------------------------------------------------
 
 Target "Help" <| fun _ ->
@@ -252,9 +252,9 @@ Target "Help" <| fun _ ->
       " * All        Builds, run tests, creates and optionally publish nuget packages"
       ""
       " Other Targets"
-      " * Help       Display this help" 
-      " * HelpNuget  Display help about creating and pushing nuget packages" 
-      " * HelpDocs   Display help about creating and pushing API docs" 
+      " * Help       Display this help"
+      " * HelpNuget  Display help about creating and pushing nuget packages"
+      " * HelpDocs   Display help about creating and pushing API docs"
       ""]
 
 Target "HelpNuget" <| fun _ ->

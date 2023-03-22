@@ -9,6 +9,7 @@ trigger:
   branches:
     include:
       - refs/tags/*
+
 pr: none
 
 variables:
@@ -20,11 +21,13 @@ variables:
     value: Akka.Persistence.PostgreSql
   - name: githubRepositoryName
     value: akkadotnet/Akka.Persistence.PostgreSql
+
 steps:
 - task: UseDotNet@2
   displayName: 'Use .NET 7'
   inputs:
     version: '7.x'
+
 - task: BatchScript@1
   displayName: 'FAKE Build'
   inputs:
