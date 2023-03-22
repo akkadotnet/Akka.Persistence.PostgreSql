@@ -1,6 +1,6 @@
 ### 1.5.1.1 March 22 2023 ###
 
-* [Update Npgsql to v7.0.2](https://github.com/akkadotnet/akka.net/releases/tag/1.5.1.1)
+* Update Npgsql to v7.0.2
 
 ### 1.5.1 March 16 2023 ###
 
