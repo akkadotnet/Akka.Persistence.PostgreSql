@@ -49,7 +49,8 @@ namespace Akka.Persistence.PostgreSql.Journal
                 storedAs: storedAs,
                 defaultSerializer: config.GetString("serializer"),
                 useSequentialAccess: config.GetBoolean("sequential-access"),
-                useBigIntPrimaryKey: config.GetBoolean("use-bigint-identity-for-ordering-column")),
+                useBigIntPrimaryKey: config.GetBoolean("use-bigint-identity-for-ordering-column"),
+                tagsColumnSize: config.GetInt("tags-column-size")),
                     Context.System.Serialization,
                     GetTimestampProvider(config.GetString("timestamp-provider")));
 

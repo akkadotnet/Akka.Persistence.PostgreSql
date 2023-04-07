@@ -2,13 +2,14 @@
 # See https://docs.microsoft.com/en-us/azure/devops/pipelines/yaml-schema for reference
 
 pool:
-  vmImage: vs2017-win2016
+  vmImage: windows-latest
   demands: Cmd
 
 trigger:
   branches:
     include:
       - refs/tags/*
+
 pr: none
 
 variables:
@@ -20,12 +21,13 @@ variables:
     value: Akka.Persistence.PostgreSql
   - name: githubRepositoryName
     value: akkadotnet/Akka.Persistence.PostgreSql
+
 steps:
 - task: UseDotNet@2
-  displayName: 'Use .NET Core Runtime 3.1.10'
+  displayName: 'Use .NET 7'
   inputs:
-    packageType: runtime
-    version: 3.1.10
+    version: '7.x'
+
 - task: BatchScript@1
   displayName: 'FAKE Build'
   inputs:

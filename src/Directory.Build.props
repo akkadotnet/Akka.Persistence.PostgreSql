@@ -1,0 +1,31 @@
+<Project>
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Generated.props', '$(MSBuildThisFileDirectory)'))" />
+
+  <PropertyGroup>
+    <Copyright>Copyright © 2013-2023 Akka.NET Team</Copyright>
+    <Authors>Akka.NET Team</Authors>
+    <PackageIconUrl>http://getakka.net/images/akkalogo.png</PackageIconUrl>
+    <PackageProjectUrl>https://github.com/akkadotnet/Akka.Persistence.PostgreSql</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/akkadotnet/Akka.Persistence.PostgreSql/blob/dev/LICENSE.md</PackageLicenseUrl>
+    <PackageTags>akka;actors;actor model;Akka;concurrency;Postgres;PostgreSql</PackageTags>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <NetStandardLibVersion>netstandard2.0</NetStandardLibVersion>
+    <NetCoreTestVersion>net7.0</NetCoreTestVersion>
+    <NetFrameworkTestVersion>net48</NetFrameworkTestVersion>
+
+    <AkkaVersion>1.5.2</AkkaVersion>
+    <PostgresLowVersion>5.0.11</PostgresLowVersion>
+    <PostgresHighVersion>7.0.2</PostgresHighVersion>
+    <PostgresVersion>[$(PostgresLowVersion), $(PostgresHighVersion)]</PostgresVersion>
+
+    <TestSdkVersion>17.4.1</TestSdkVersion>
+    <XunitVersion>2.4.2</XunitVersion>
+    <XunitRunnerVersion>2.4.5</XunitRunnerVersion>
+  </PropertyGroup>
+</Project>
