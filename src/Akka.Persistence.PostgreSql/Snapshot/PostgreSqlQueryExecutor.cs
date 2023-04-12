@@ -8,19 +8,21 @@
 using Akka.Persistence.Sql.Common.Snapshot;
 using Akka.Serialization;
 using Akka.Util;
-using Newtonsoft.Json;
 using Npgsql;
 using NpgsqlTypes;
 using System;
 using System.Data;
 using System.Data.Common;
+using System.Text;
 
 namespace Akka.Persistence.PostgreSql.Snapshot
 {
     public class PostgreSqlQueryExecutor : AbstractQueryExecutor
     {
-        private readonly Func<object, SerializationResult> _serialize;
-        private readonly Func<Type, object, string, int?, object> _deserialize;
+        private readonly NpgsqlDbType _payloadDbType;
+        private readonly NewtonSoftJsonSerializer _jsonSerializer;
+        private readonly PostgreSqlQueryConfiguration _config;
+        
         public PostgreSqlQueryExecutor(PostgreSqlQueryConfiguration configuration, Akka.Serialization.Serialization serialization) : base(configuration, serialization)
         {
             CreateSnapshotTableSql = $@"
@@ -62,42 +64,15 @@ namespace Akka.Persistence.PostgreSql.Snapshot
                 SELECT @PersistenceId, @SequenceNr, @Timestamp, @Manifest, @Payload, @SerializerId
                 WHERE NOT EXISTS (SELECT * FROM upsert)";
 
-            switch (configuration.StoredAs)
+            _jsonSerializer = new NewtonSoftJsonSerializer(Serialization.System);
+            _config = configuration;
+            _payloadDbType = _config.StoredAs switch
             {
-                case StoredAsType.ByteA:
-                    _serialize = ss =>
-                    {
-                        var serializer = Serialization.FindSerializerFor(ss);
-                        // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
-                        var binary = Akka.Serialization.Serialization
-                            .WithTransport(Serialization.System, () => serializer.ToBinary(ss));
-                        return new SerializationResult(NpgsqlDbType.Bytea, binary, serializer);
-                    };
-                    _deserialize = (type, serialized, manifest, serializerId) =>
-                    {
-                        if (serializerId.HasValue)
-                        {
-                            return Serialization.Deserialize((byte[])serialized, serializerId.Value, manifest);
-                        }
-                        else
-                        {
-                            // Support old writes that did not set the serializer id
-                            var deserializer = Serialization.FindSerializerForType(type, Configuration.DefaultSerializer);
-                            return deserializer.FromBinary((byte[])serialized, type);
-                        }
-                    };
-                    break;
-                case StoredAsType.JsonB:
-                    _serialize = ss => new SerializationResult(NpgsqlDbType.Jsonb, JsonConvert.SerializeObject(ss, configuration.JsonSerializerSettings), null);
-                    _deserialize = (type, serialized, manifest, serializerId) => JsonConvert.DeserializeObject((string)serialized, type, configuration.JsonSerializerSettings);
-                    break;
-                case StoredAsType.Json:
-                    _serialize = ss => new SerializationResult(NpgsqlDbType.Json, JsonConvert.SerializeObject(ss, configuration.JsonSerializerSettings), null);
-                    _deserialize = (type, serialized, manifest, serializerId) => JsonConvert.DeserializeObject((string)serialized, type, configuration.JsonSerializerSettings);
-                    break;
-                default:
-                    throw new NotSupportedException($"{configuration.StoredAs} is not supported Db type for a payload");
-            }
+                StoredAsType.ByteA => NpgsqlDbType.Bytea,
+                StoredAsType.JsonB => NpgsqlDbType.Jsonb,
+                StoredAsType.Json => NpgsqlDbType.Json,
+                _ => throw new NotSupportedException($"{_config.StoredAs} is not supported Db type for a payload")
+            };
         }
 
         protected override string InsertSnapshotSql { get; }
@@ -110,29 +85,43 @@ namespace Akka.Persistence.PostgreSql.Snapshot
         protected override void SetTimestampParameter(DateTime timestamp, DbCommand command) => AddParameter(command, "@Timestamp", DbType.Int64, timestamp.Ticks);
         protected override void SetPayloadParameter(object snapshot, DbCommand command)
         {
-            var serializationResult = _serialize(snapshot);
-            command.Parameters.Add(new NpgsqlParameter("@Payload", serializationResult.DbType) { Value = serializationResult.Payload });
+            var serializer = GetSerializerFor(snapshot);
+            // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
+            object payload = _payloadDbType switch
+            {
+                NpgsqlDbType.Bytea => Akka.Serialization.Serialization.WithTransport(Serialization.System, () => serializer.ToBinary(snapshot)),
+                _ => Akka.Serialization.Serialization.WithTransport(Serialization.System, () =>
+                {
+                    var bytes = _jsonSerializer.ToBinary(snapshot);
+                    return Encoding.UTF8.GetString(bytes);
+                })
+            };
+            command.Parameters.Add(new NpgsqlParameter("@Payload", _payloadDbType) { Value = payload });
         }
 
         protected override void SetManifestParameters(object snapshot, DbCommand command)
         {
-            var snapshotType = snapshot.GetType();
-            var serializer = Serialization.FindSerializerForType(snapshotType, Configuration.DefaultSerializer);
-
-            var manifest = "";
-            if (serializer is SerializerWithStringManifest stringManifest)
+            var serializer = GetSerializerFor(snapshot);
+            var manifest = serializer switch
             {
-                manifest = stringManifest.Manifest(snapshot);
-            }
-            else if (serializer.IncludeManifest)
-            {
-                manifest = snapshotType.TypeQualifiedName();
-            }
-
+                SerializerWithStringManifest stringManifest => stringManifest.Manifest(snapshot),
+                _ => snapshot.GetType().TypeQualifiedName(),
+            };
             AddParameter(command, "@Manifest", DbType.String, manifest);
             AddParameter(command, "@SerializerId", DbType.Int32, serializer.Identifier);
         }
 
+        private Serializer GetSerializerFor(object snapshot)
+        {
+            return _payloadDbType switch
+            {
+                NpgsqlDbType.Bytea => Serialization.FindSerializerFor(snapshot, _config.DefaultSerializer),
+                NpgsqlDbType.Jsonb => _jsonSerializer,
+                NpgsqlDbType.Json => _jsonSerializer,
+                _ => throw new NotSupportedException($"{_payloadDbType} is not supported Db type for a payload")
+            };
+        }
+        
         protected override SelectedSnapshot ReadSnapshot(DbDataReader reader)
         {
             var persistenceId = reader.GetString(0);
@@ -141,11 +130,12 @@ namespace Akka.Persistence.PostgreSql.Snapshot
             var manifest = reader.GetString(3);
             var payloadObject = reader[4];
 
-            int? serializerId = null;
-            Type type = null;
+            int? serializerId;
+            Type type;
             if (reader.IsDBNull(5))
             {
                 type = Type.GetType(manifest, true);
+                serializerId = null;
             }
             else
             {
@@ -153,7 +143,25 @@ namespace Akka.Persistence.PostgreSql.Snapshot
                 serializerId = reader.GetInt32(5);
             }
 
-            var snapshot = _deserialize(type, payloadObject, manifest, serializerId);
+            object snapshot;
+            if (serializerId is { })
+            {
+                if (_payloadDbType == NpgsqlDbType.Bytea)
+                {
+                    snapshot = Serialization.Deserialize((byte[])payloadObject, serializerId.Value, manifest);
+                }
+                else
+                {
+                    var bytes = Encoding.UTF8.GetBytes((string)payloadObject);
+                    snapshot = _jsonSerializer.FromBinary(bytes, type);
+                }
+            }
+            else
+            {
+                // Support old writes that did not set the serializer id
+                var deserializer = Serialization.FindSerializerForType(type, Configuration.DefaultSerializer);
+                snapshot = deserializer.FromBinary((byte[])payloadObject, type);
+            }
 
             var metadata = new SnapshotMetadata(persistenceId, sequenceNr, timestamp);
             return new SelectedSnapshot(metadata, snapshot);
@@ -166,7 +174,6 @@ namespace Akka.Persistence.PostgreSql.Snapshot
     public class PostgreSqlQueryConfiguration : QueryConfiguration
     {
         public readonly StoredAsType StoredAs;
-        public readonly JsonSerializerSettings JsonSerializerSettings;
 
         public PostgreSqlQueryConfiguration(
             string schemaName,
@@ -180,16 +187,11 @@ namespace Akka.Persistence.PostgreSql.Snapshot
             TimeSpan timeout,
             StoredAsType storedAs,
             string defaultSerializer,
-            JsonSerializerSettings jsonSerializerSettings = null,
             bool useSequentialAccess = true)
             : base(schemaName, snapshotTableName, persistenceIdColumnName, sequenceNrColumnName, payloadColumnName, 
                 manifestColumnName, timestampColumnName, serializerIdColumnName, timeout, defaultSerializer, useSequentialAccess)
         {
             StoredAs = storedAs;
-            JsonSerializerSettings = jsonSerializerSettings ?? new JsonSerializerSettings
-            {
-                ContractResolver = new AkkaContractResolver()
-            };
         }
     }
 }

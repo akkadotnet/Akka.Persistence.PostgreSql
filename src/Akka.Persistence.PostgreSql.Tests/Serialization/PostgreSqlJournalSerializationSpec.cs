@@ -25,22 +25,28 @@ namespace Akka.Persistence.PostgreSql.Tests.Serialization
             //need to make sure db is created before the tests start
             DbUtils.Initialize(fixture);
 
-            return ConfigurationFactory.ParseString(@"
-                akka.persistence {
+            return ConfigurationFactory.ParseString($@"
+                akka.persistence {{
                     publish-plugin-commands = on
-                    journal {
+                    journal {{
                         plugin = ""akka.persistence.journal.postgresql""
-                        postgresql {
-                            class = ""Akka.Persistence.PostgreSql.Journal.PostgreSqlJournal, Akka.Persistence.PostgreSql""
-                            plugin-dispatcher = ""akka.actor.default-dispatcher""
-                            table-name = event_journal
-                            schema-name = public
+                        postgresql {{
+                            stored-as = bytea
+                            connection-string = ""{DbUtils.ConnectionString}""
                             auto-initialize = on
-                            connection-string = """ + DbUtils.ConnectionString + @"""
-                        }
-                    }
-                }
-                akka.test.single-expect-default = 10s");
+                        }}
+                    }}
+                    snapshot-store {{
+                        plugin = ""akka.persistence.snapshot-store.postgresql""
+                        postgresql {{
+                            stored-as = bytea
+                            connection-string = ""{DbUtils.ConnectionString}""
+                            auto-initialize = on
+                        }}
+                    }}
+                }}
+                akka.test.single-expect-default = 10s")
+                .WithFallback(PostgreSqlPersistence.DefaultConfiguration());
         }
 
         [Fact(Skip = "Sql plugin does not support EventAdapter.Manifest")]
