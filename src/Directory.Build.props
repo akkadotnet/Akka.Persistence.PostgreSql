@@ -19,7 +19,7 @@
     <NetCoreTestVersion>net7.0</NetCoreTestVersion>
     <NetFrameworkTestVersion>net48</NetFrameworkTestVersion>
 
-    <AkkaVersion>1.5.2</AkkaVersion>
+    <AkkaVersion>1.5.3</AkkaVersion>
     <PostgresLowVersion>5.0.11</PostgresLowVersion>
     <PostgresHighVersion>7.0.2</PostgresHighVersion>
     <PostgresVersion>[$(PostgresLowVersion), $(PostgresHighVersion)]</PostgresVersion>
