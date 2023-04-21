@@ -14,6 +14,7 @@ using NpgsqlTypes;
 using System;
 using System.Data;
 using System.Data.Common;
+using Akka.Persistence.Sql.Common;
 
 namespace Akka.Persistence.PostgreSql.Snapshot
 {
@@ -180,10 +181,24 @@ namespace Akka.Persistence.PostgreSql.Snapshot
             TimeSpan timeout,
             StoredAsType storedAs,
             string defaultSerializer,
+            IsolationLevel readIsolationLevel,
+            IsolationLevel writeIsolationLevel,
             JsonSerializerSettings jsonSerializerSettings = null,
             bool useSequentialAccess = true)
-            : base(schemaName, snapshotTableName, persistenceIdColumnName, sequenceNrColumnName, payloadColumnName, 
-                manifestColumnName, timestampColumnName, serializerIdColumnName, timeout, defaultSerializer, useSequentialAccess)
+            : base(
+                schemaName: schemaName,
+                snapshotTableName: snapshotTableName,
+                persistenceIdColumnName: persistenceIdColumnName,
+                sequenceNrColumnName: sequenceNrColumnName,
+                payloadColumnName: payloadColumnName, 
+                manifestColumnName: manifestColumnName,
+                timestampColumnName: timestampColumnName,
+                serializerIdColumnName: serializerIdColumnName,
+                timeout: timeout,
+                defaultSerializer: defaultSerializer,
+                useSequentialAccess: useSequentialAccess, 
+                readIsolationLevel: readIsolationLevel,
+                writeIsolationLevel: writeIsolationLevel)
         {
             StoredAs = storedAs;
             JsonSerializerSettings = jsonSerializerSettings ?? new JsonSerializerSettings

@@ -20,6 +20,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{CADDD4C2
 		..\build.sh = ..\build.sh
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Persistence.PostgreSql.Performance.Tests", "Akka.Persistence.PostgreSql.Performance.Tests\Akka.Persistence.PostgreSql.Performance.Tests.csproj", "{E5A31545-77AA-4BE1-A2A4-853256CC0F5E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -34,6 +36,10 @@ Global
 		{09984665-D586-4739-8B61-513EC61EA0A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{09984665-D586-4739-8B61-513EC61EA0A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{09984665-D586-4739-8B61-513EC61EA0A5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E5A31545-77AA-4BE1-A2A4-853256CC0F5E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E5A31545-77AA-4BE1-A2A4-853256CC0F5E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E5A31545-77AA-4BE1-A2A4-853256CC0F5E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E5A31545-77AA-4BE1-A2A4-853256CC0F5E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
