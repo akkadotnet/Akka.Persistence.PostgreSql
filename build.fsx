@@ -136,6 +136,7 @@ Target "RunTests" <| fun _ ->
     let projects =
         match (isWindows) with
             | true -> !! "./src/**/*.Tests.*sproj"
+                      -- "./src/**/*.Performance.Tests.*sproj"
             | _ -> !! "./src/**/*.Tests.*sproj" // if you need to filter specs for Linux vs. Windows, do it here
 
     ensureDirectory outputTests
@@ -158,6 +159,7 @@ Target "RunTestsNet" <| fun _ ->
     let projects =
         match (isWindows) with
             | true -> !! "./src/**/*.Tests.*sproj"
+                      -- "./src/**/*.Performance.Tests.*sproj"
             | _ -> !! "./src/**/*.Tests.*sproj" // if you need to filter specs for Linux vs. Windows, do it here
 
     ensureDirectory outputTests

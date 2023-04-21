@@ -21,6 +21,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Akka.Persistence.Sql.Common.Extensions;
 
 namespace Akka.Persistence.PostgreSql.Journal
 {
@@ -198,46 +199,46 @@ namespace Akka.Persistence.PostgreSql.Journal
 
         public override async Task DeleteBatchAsync(DbConnection connection, CancellationToken cancellationToken, string persistenceId, long toSequenceNr)
         {
-            using (var deleteCommand = GetCommand(connection, DeleteBatchSql))
-            using (var deleteMetadataCommand = GetCommand(connection, DeleteBatchSqlMetadata))
-            using (var highestSeqNrCommand = GetCommand(connection, HighestSequenceNrSql))
+            var res = await connection.ExecuteInTransaction(ReadIsolationLevel, cancellationToken, async (tx, token) =>
             {
+                using var highestSeqNrCommand = GetCommand(connection, HighestSequenceNrSql);
+                highestSeqNrCommand.Transaction = tx;
+                
                 AddParameter(highestSeqNrCommand, "@PersistenceId", DbType.String, persistenceId);
+                
+                return await highestSeqNrCommand.ExecuteScalarAsync(token);
+            });
+                
+            var highestSeqNr = res is long ? Convert.ToInt64(res) : 0L;
 
+            await connection.ExecuteInTransaction(WriteIsolationLevel, cancellationToken, async (tx, token) =>
+            {
+                using var deleteCommand = GetCommand(connection, DeleteBatchSql);
+                using var deleteMetadataCommand = GetCommand(connection, DeleteBatchSqlMetadata);
+                deleteCommand.Transaction = tx;
+                deleteMetadataCommand.Transaction = tx;
+                
                 AddParameter(deleteCommand, "@PersistenceId", DbType.String, persistenceId);
                 AddParameter(deleteCommand, "@ToSequenceNr", DbType.Int64, toSequenceNr);
 
                 AddParameter(deleteMetadataCommand, "@PersistenceId", DbType.String, persistenceId);
                 AddParameter(deleteMetadataCommand, "@ToSequenceNr", DbType.Int64, toSequenceNr);
 
-                using (var tx = connection.BeginTransaction())
+                await deleteCommand.ExecuteNonQueryAsync(token);
+                await deleteMetadataCommand.ExecuteNonQueryAsync(token);
+
+                if (highestSeqNr <= toSequenceNr)
                 {
-                    deleteCommand.Transaction = tx;
-                    deleteMetadataCommand.Transaction = tx;
-                    highestSeqNrCommand.Transaction = tx;
+                    using var updateCommand = GetCommand(connection, UpdateSequenceNrSql);
+                    updateCommand.Transaction = tx;
 
-                    var res = await highestSeqNrCommand.ExecuteScalarAsync(cancellationToken);
-                    var highestSeqNr = res is long ? Convert.ToInt64(res) : 0L;
+                    AddParameter(updateCommand, "@PersistenceId", DbType.String, persistenceId);
+                    AddParameter(updateCommand, "@SequenceNr", DbType.Int64, highestSeqNr);
 
-                    await deleteCommand.ExecuteNonQueryAsync(cancellationToken);
-                    await deleteMetadataCommand.ExecuteNonQueryAsync(cancellationToken);
-
-                    if (highestSeqNr <= toSequenceNr)
-                    {
-                        using (var updateCommand = GetCommand(connection, UpdateSequenceNrSql))
-                        {
-                            updateCommand.Transaction = tx;
-
-                            AddParameter(updateCommand, "@PersistenceId", DbType.String, persistenceId);
-                            AddParameter(updateCommand, "@SequenceNr", DbType.Int64, highestSeqNr);
-
-                            await updateCommand.ExecuteNonQueryAsync(cancellationToken);
-                            tx.Commit();
-                        }
-                    }
-                    else tx.Commit();
+                    await updateCommand.ExecuteNonQueryAsync(token);
                 }
-            }
+            });
+            
         }
     }
     
@@ -264,13 +265,33 @@ namespace Akka.Persistence.PostgreSql.Journal
             TimeSpan timeout,
             StoredAsType storedAs,
             string defaultSerializer,
+            IsolationLevel readIsolationLevel,
+            IsolationLevel writeIsolationLevel,
             JsonSerializerSettings jsonSerializerSettings = null,
             bool useSequentialAccess = true,
             bool useBigIntPrimaryKey = false)
-            : this(schemaName, journalEventsTableName, metaTableName, persistenceIdColumnName, sequenceNrColumnName,
-                payloadColumnName, manifestColumnName, timestampColumnName, isDeletedColumnName, tagsColumnName,
-                orderingColumn, serializerIdColumnName, timeout, storedAs, defaultSerializer, 100, jsonSerializerSettings,
-                useSequentialAccess, useBigIntPrimaryKey)
+            : this(
+                schemaName,
+                journalEventsTableName,
+                metaTableName,
+                persistenceIdColumnName,
+                sequenceNrColumnName,
+                payloadColumnName, 
+                manifestColumnName,
+                timestampColumnName,
+                isDeletedColumnName,
+                tagsColumnName,
+                orderingColumn,
+                serializerIdColumnName,
+                timeout,
+                storedAs,
+                defaultSerializer,
+                readIsolationLevel,
+                writeIsolationLevel,
+                100,
+                jsonSerializerSettings,
+                useSequentialAccess,
+                useBigIntPrimaryKey)
         {
         }
         
@@ -290,13 +311,30 @@ namespace Akka.Persistence.PostgreSql.Journal
             TimeSpan timeout,
             StoredAsType storedAs,
             string defaultSerializer,
+            IsolationLevel readIsolationLevel,
+            IsolationLevel writeIsolationLevel,
             int tagsColumnSize = 2000, 
             JsonSerializerSettings jsonSerializerSettings = null, 
             bool useSequentialAccess = true, 
             bool useBigIntPrimaryKey = false)
-            : base(schemaName, journalEventsTableName, metaTableName, persistenceIdColumnName, sequenceNrColumnName,
-                  payloadColumnName, manifestColumnName, timestampColumnName, isDeletedColumnName, tagsColumnName, orderingColumn, 
-                serializerIdColumnName, timeout, defaultSerializer, useSequentialAccess)
+            : base(
+                schemaName,
+                journalEventsTableName,
+                metaTableName,
+                persistenceIdColumnName,
+                sequenceNrColumnName,
+                payloadColumnName,
+                manifestColumnName,
+                timestampColumnName,
+                isDeletedColumnName,
+                tagsColumnName,
+                orderingColumn, 
+                serializerIdColumnName,
+                timeout,
+                defaultSerializer,
+                useSequentialAccess,
+                readIsolationLevel,
+                writeIsolationLevel)
         {
             StoredAs = storedAs;
             UseBigIntPrimaryKey = useBigIntPrimaryKey;

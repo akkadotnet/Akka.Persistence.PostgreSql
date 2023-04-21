@@ -11,7 +11,7 @@ using Akka.Persistence.TestKit.Performance;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Akka.Persistence.PostgreSql.Tests.Performance
+namespace Akka.Persistence.PostgreSql.Performance.Tests
 {
     [Collection("PostgreSqlSpec")]
     public class PostgreSqlJournalPerfSpec : JournalPerfSpec

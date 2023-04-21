@@ -5,11 +5,10 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-using Npgsql;
 using System;
-using System.IO;
+using Npgsql;
 
-namespace Akka.Persistence.PostgreSql.Tests
+namespace Akka.Persistence.PostgreSql.Performance.Tests
 {
     public static class DbUtils
     {
@@ -48,11 +47,6 @@ namespace Akka.Persistence.PostgreSql.Tests
                     DoCreate(conn, databaseName);
                 }
             }
-
-            // Delete local snapshot flat file database
-            var path = "./snapshots";
-            if (Directory.Exists(path))
-                Directory.Delete(path, true);
         }
 
         public static void Clean()

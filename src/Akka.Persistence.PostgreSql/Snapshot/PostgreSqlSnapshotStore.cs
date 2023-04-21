@@ -10,6 +10,9 @@ using Akka.Persistence.Sql.Common.Snapshot;
 using Npgsql;
 using System;
 using System.Data.Common;
+using System.Runtime.CompilerServices;
+using Akka.Annotations;
+using Akka.Persistence.Sql.Common;
 
 namespace Akka.Persistence.PostgreSql.Snapshot
 {
@@ -23,14 +26,19 @@ namespace Akka.Persistence.PostgreSql.Snapshot
         public PostgreSqlSnapshotStore(Config snapshotConfig) : base(snapshotConfig)
         {
             var config = snapshotConfig.WithFallback(Extension.DefaultSnapshotConfig);
-            StoredAsType storedAs;
-            var storedAsString = config.GetString("stored-as");
-            if (!Enum.TryParse(storedAsString, true, out storedAs))
-            {
-                throw new ConfigurationException($"Value [{storedAsString}] of the 'stored-as' HOCON config key is not valid. Valid values: bytea, json, jsonb.");
-            }
 
-            QueryExecutor = new PostgreSqlQueryExecutor(new PostgreSqlQueryConfiguration(
+            QueryExecutor = new PostgreSqlQueryExecutor(
+                    CreateQueryConfiguration(config, Settings),
+                    Context.System.Serialization);
+
+            SnapshotSettings = new PostgreSqlSnapshotStoreSettings(config);
+        }
+
+        [InternalApi]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static PostgreSqlQueryConfiguration CreateQueryConfiguration(Config config, SnapshotStoreSettings settings)
+        {
+            return new PostgreSqlQueryConfiguration(
                 schemaName: config.GetString("schema-name"),
                 snapshotTableName: config.GetString("table-name"),
                 persistenceIdColumnName: "persistence_id",
@@ -40,12 +48,11 @@ namespace Akka.Persistence.PostgreSql.Snapshot
                 timestampColumnName: "created_at",
                 serializerIdColumnName: "serializer_id",
                 timeout: config.GetTimeSpan("connection-timeout"),
-                storedAs: storedAs,
+                storedAs: config.GetStoredAsType("stored-as"),
                 defaultSerializer: config.GetString("serializer"),
-                useSequentialAccess: config.GetBoolean("sequential-access")),
-                    Context.System.Serialization);
-
-            SnapshotSettings = new PostgreSqlSnapshotStoreSettings(config);
+                useSequentialAccess: config.GetBoolean("sequential-access"),
+                readIsolationLevel: settings.ReadIsolationLevel,
+                writeIsolationLevel: settings.WriteIsolationLevel);
         }
 
         protected override DbConnection CreateDbConnection(string connectionString)

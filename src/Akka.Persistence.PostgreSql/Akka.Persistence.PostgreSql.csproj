@@ -4,6 +4,7 @@
     <Description>Akka Persistence journal and snapshot store backed by PostgreSql database.</Description>
     <TargetFrameworks>$(NetStandardLibVersion)</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <LangVersion>11</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
