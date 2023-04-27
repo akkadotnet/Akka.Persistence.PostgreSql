@@ -21,7 +21,7 @@
 
     <AkkaVersion>1.5.4</AkkaVersion>
     <PostgresLowVersion>5.0.11</PostgresLowVersion>
-    <PostgresHighVersion>7.0.2</PostgresHighVersion>
+    <PostgresHighVersion>7.0.4</PostgresHighVersion>
     <PostgresVersion>[$(PostgresLowVersion), $(PostgresHighVersion)]</PostgresVersion>
 
     <TestSdkVersion>17.4.1</TestSdkVersion>
