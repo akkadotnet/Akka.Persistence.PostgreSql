@@ -20,9 +20,11 @@
     <NetFrameworkTestVersion>net48</NetFrameworkTestVersion>
 
     <AkkaVersion>1.5.4</AkkaVersion>
+
+    <!-- Install from version 5.0.11 included all the way up to 7.x.x, but don't go up a major version -->
     <PostgresLowVersion>5.0.11</PostgresLowVersion>
-    <PostgresHighVersion>7.0.4</PostgresHighVersion>
-    <PostgresVersion>[$(PostgresLowVersion), $(PostgresHighVersion)]</PostgresVersion>
+    <PostgresHighVersion>8</PostgresHighVersion>
+    <PostgresVersion>[$(PostgresLowVersion), $(PostgresHighVersion))</PostgresVersion>
 
     <TestSdkVersion>17.4.1</TestSdkVersion>
     <XunitVersion>2.4.2</XunitVersion>
