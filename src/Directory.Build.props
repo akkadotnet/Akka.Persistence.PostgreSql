@@ -8,6 +8,7 @@
     <PackageProjectUrl>https://github.com/akkadotnet/Akka.Persistence.PostgreSql</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/akkadotnet/Akka.Persistence.PostgreSql/blob/dev/LICENSE.md</PackageLicenseUrl>
     <PackageTags>akka;actors;actor model;Akka;concurrency;Postgres;PostgreSql</PackageTags>
+    <LangVersion>11</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup>

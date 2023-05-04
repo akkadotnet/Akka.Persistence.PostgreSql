@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>$(NetStandardLibVersion)</TargetFramework>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <Description>Akka.Persistence.PostgreSql Microsoft.Extensions.Hosting support.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Akka.Persistence.Hosting"/>
+    <PackageReference Include="Akka.Persistence.Query.Sql"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Akka.Persistence.PostgreSql\Akka.Persistence.PostgreSql.csproj" />
+  </ItemGroup>
+</Project>
