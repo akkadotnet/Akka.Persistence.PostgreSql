@@ -28,7 +28,7 @@
     <PostgresVersion>[$(PostgresLowVersion), $(PostgresHighVersion))</PostgresVersion>
 
     <TestSdkVersion>17.4.1</TestSdkVersion>
-    <XunitVersion>2.4.2</XunitVersion>
+    <XunitVersion>2.5.0</XunitVersion>
     <XunitRunnerVersion>2.4.5</XunitRunnerVersion>
   </PropertyGroup>
 </Project>
