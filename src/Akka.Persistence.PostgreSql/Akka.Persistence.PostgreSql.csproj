@@ -2,9 +2,11 @@
   <PropertyGroup>
     <AssemblyTitle>Akka.Persistence.PostgreSql</AssemblyTitle>
     <Description>Akka Persistence journal and snapshot store backed by PostgreSql database.</Description>
-    <TargetFrameworks>$(NetStandardLibVersion)</TargetFrameworks>
+    <TargetFramework>$(NetStandardLibVersion)</TargetFramework>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <LangVersion>11</LangVersion>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,4 +23,9 @@
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
       <DefineConstants>$(DefineConstants);RELEASE</DefineConstants>
   </PropertyGroup>
+  
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="\" />
+    <None Include="../../docs/images/icon.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
 </Project>

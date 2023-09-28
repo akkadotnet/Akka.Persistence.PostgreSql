@@ -4,10 +4,6 @@
   <PropertyGroup>
     <Copyright>Copyright © 2013-2023 Akka.NET Team</Copyright>
     <Authors>Akka.NET Team</Authors>
-    <PackageIconUrl>http://getakka.net/images/akkalogo.png</PackageIconUrl>
-    <PackageProjectUrl>https://github.com/akkadotnet/Akka.Persistence.PostgreSql</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/akkadotnet/Akka.Persistence.PostgreSql/blob/dev/LICENSE.md</PackageLicenseUrl>
-    <PackageTags>akka;actors;actor model;Akka;concurrency;Postgres;PostgreSql</PackageTags>
     <LangVersion>11</LangVersion>
   </PropertyGroup>
 
@@ -26,9 +22,24 @@
     <PostgresLowVersion>5.0.11</PostgresLowVersion>
     <PostgresHighVersion>8</PostgresHighVersion>
     <PostgresVersion>[$(PostgresLowVersion), $(PostgresHighVersion))</PostgresVersion>
-
-    <TestSdkVersion>17.4.1</TestSdkVersion>
-    <XunitVersion>2.5.0</XunitVersion>
-    <XunitRunnerVersion>2.5.0</XunitRunnerVersion>
   </PropertyGroup>
+
+  <!-- NuGet package properties -->
+  <PropertyGroup>
+    <!-- Optional: Publish the repository URL in the built .nupkg (in the NuSpec <Repository> element) -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <!-- Optional: Embed source files that are not tracked by the source control manager in the PDB -->
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <!-- Optional: Build symbol package (.snupkg) to distribute the PDB containing Source Link -->
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PackageProjectUrl>https://github.com/akkadotnet/Akka.Persistence.PostgreSql</PackageProjectUrl>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageTags>akka;actors;actor model;Akka;concurrency;Postgres;PostgreSql</PackageTags>
+  </PropertyGroup>
+  
+  <!-- GitHub SourceLink -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All" />
+  </ItemGroup>
 </Project>

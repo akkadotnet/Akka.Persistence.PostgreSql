@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>$(NetStandardLibVersion)</TargetFramework>
+    <PackageIcon>icon.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <Description>Akka.Persistence.PostgreSql Microsoft.Extensions.Hosting support.</Description>
   </PropertyGroup>
@@ -12,5 +13,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Akka.Persistence.PostgreSql\Akka.Persistence.PostgreSql.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="./README.md" Pack="true" PackagePath="\" />
+    <None Include="../../docs/images/icon.png" Pack="true" PackagePath="\" />
   </ItemGroup>
 </Project>
