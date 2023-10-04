@@ -1,3 +1,8 @@
+### 1.5.13 October 4 2023 ###
+
+* [Update Akka.NET to v1.5.13](https://github.com/akkadotnet/akka.net/releases/tag/1.5.13)
+* [Update Akka.Hosting to 1.5.13](https://github.com/akkadotnet/Akka.Hosting/releases/tag/1.5.13)
+
 ### 1.5.4.1 April 27 2023 ###
 
 * Allow all 7.x major versions of Npgsql
