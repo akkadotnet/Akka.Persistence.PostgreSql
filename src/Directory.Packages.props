@@ -1,12 +1,19 @@
 <Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <AkkaVersion>1.5.13</AkkaVersion>
+    <AkkaHostingVersion>1.5.13</AkkaHostingVersion>
+
+    <!-- Install from version 5.0.11 included all the way up to 7.x.x, but don't go up a major version -->
+    <PostgresLowVersion>5.0.11</PostgresLowVersion>
+    <PostgresHighVersion>8</PostgresHighVersion>
+    <PostgresVersion>[$(PostgresLowVersion), $(PostgresHighVersion))</PostgresVersion>
   </PropertyGroup>
 
   <!-- App dependencies -->
   <ItemGroup>
     <PackageVersion Include="Akka.Persistence.Sql.Common" Version="$(AkkaVersion)" />
-    <PackageVersion Include="Akka.Persistence.Hosting" Version="$(AkkaVersion)" />
+    <PackageVersion Include="Akka.Persistence.Hosting" Version="$(AkkaHostingVersion)" />
     <PackageVersion Include="Akka.Persistence.Query.Sql" Version="$(AkkaVersion)" />
     <PackageVersion Include="Npgsql" Version="$(PostgresVersion)" />
   </ItemGroup>
