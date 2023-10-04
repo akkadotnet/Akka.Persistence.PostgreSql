@@ -15,13 +15,6 @@
     <NetStandardLibVersion>netstandard2.0</NetStandardLibVersion>
     <NetCoreTestVersion>net7.0</NetCoreTestVersion>
     <NetFrameworkTestVersion>net48</NetFrameworkTestVersion>
-
-    <AkkaVersion>1.5.13</AkkaVersion>
-
-    <!-- Install from version 5.0.11 included all the way up to 7.x.x, but don't go up a major version -->
-    <PostgresLowVersion>5.0.11</PostgresLowVersion>
-    <PostgresHighVersion>8</PostgresHighVersion>
-    <PostgresVersion>[$(PostgresLowVersion), $(PostgresHighVersion))</PostgresVersion>
   </PropertyGroup>
 
   <!-- NuGet package properties -->
