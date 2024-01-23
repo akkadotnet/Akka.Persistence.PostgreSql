@@ -1,6 +1,6 @@
 <Project>
   <PropertyGroup>
-    <VersionPrefix>1.5.4.1</VersionPrefix>
-    <PackageReleaseNotes>Allow all 7.x major versions of Npgsql</PackageReleaseNotes>
+    <VersionPrefix>1.5.14</VersionPrefix>
+    <PackageReleaseNotes>Allow all 8.x major versions of Npgsql</PackageReleaseNotes>
   </PropertyGroup>
 </Project>
