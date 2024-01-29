@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Akka.Util;
 using Docker.DotNet;
@@ -24,15 +23,7 @@ namespace Akka.Persistence.PostgreSql.Tests
 
         public PostgresFixture()
         {
-            DockerClientConfiguration config;
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                config = new DockerClientConfiguration(new Uri("unix://var/run/docker.sock"));
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                config = new DockerClientConfiguration(new Uri("npipe://./pipe/docker_engine"));
-            else
-                throw new NotSupportedException($"Unsupported OS [{RuntimeInformation.OSDescription}]");
-
-            Client = config.CreateClient();
+            Client = new DockerClientConfiguration().CreateClient();
         }
 
         protected string ImageName => "postgres";
