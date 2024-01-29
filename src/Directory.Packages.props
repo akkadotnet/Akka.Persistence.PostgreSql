@@ -6,8 +6,8 @@
 
     <!-- Install from version 5.0.11 included all the way up to 8.x.x, but don't go up a major version -->
     <PostgresLowVersion>5.0.11</PostgresLowVersion>
-    <PostgresHighVersion>8</PostgresHighVersion>
-    <PostgresVersion>[$(PostgresLowVersion), $(PostgresHighVersion))</PostgresVersion>
+    <PostgresHighVersion>9</PostgresHighVersion>
+    <PostgresVersion>[$(PostgresLowVersion), $(PostgresHighVersion)]</PostgresVersion>
   </PropertyGroup>
 
   <!-- App dependencies -->
