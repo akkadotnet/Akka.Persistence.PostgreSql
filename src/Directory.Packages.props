@@ -1,8 +1,8 @@
 <Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    <AkkaVersion>1.5.13</AkkaVersion>
-    <AkkaHostingVersion>1.5.13</AkkaHostingVersion>
+    <AkkaVersion>1.5.15</AkkaVersion>
+    <AkkaHostingVersion>1.5.15</AkkaHostingVersion>
 
     <!-- Install from version 5.0.11 included all the way up to 8.x.x, but don't go up a major version -->
     <PostgresLowVersion>5.0.11</PostgresLowVersion>
