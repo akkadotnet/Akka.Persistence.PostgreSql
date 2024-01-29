@@ -1,3 +1,7 @@
+### 1.5.14 January 23 2024 ###
+
+* Allow all 8.x major versions of Npgsql
+
 ### 1.5.13 October 4 2023 ###
 
 * [Update Akka.NET to v1.5.13](https://github.com/akkadotnet/akka.net/releases/tag/1.5.13)
