@@ -1,3 +1,7 @@
+### 1.5.15.1 January 29 2024 ###
+
+* Fix Npgsql upper range version number
+
 ### 1.5.15 January 29 2024 ###
 
 * [Update Akka.NET to v1.5.15](https://github.com/akkadotnet/akka.net/releases/tag/1.5.15)
