@@ -4,7 +4,7 @@
 * [Update Akka.Hosting to 1.5.20](https://github.com/akkadotnet/Akka.Hosting/releases/tag/1.5.20)
 * [Update Npgsql minimum version to v8.0.3](https://github.com/akkadotnet/Akka.Persistence.PostgreSql/pull/261)
 
-** PostgreSQL minimum version update **
+**PostgreSQL minimum version update**
 
 The minimum version of the Npgsql NuGet package have been upgraded to 8.0.3 due to [this CVE report](https://github.com/advisories/GHSA-x9vc-6hfv-hg8c)
 
