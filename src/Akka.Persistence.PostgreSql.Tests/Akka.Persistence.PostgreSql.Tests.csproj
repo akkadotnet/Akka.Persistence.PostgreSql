@@ -9,6 +9,7 @@
     <PackageReference Include="Docker.DotNet"/>
     <PackageReference Include="Akka.Persistence.Sql.TestKit" />
     <PackageReference Include="Microsoft.NET.Test.Sdk"/>
+    <PackageReference Include="System.Collections.Immutable" /> <!-- Added because of version collision between 7.0 and 8.0 -->
     <PackageReference Include="xunit"/>
     <PackageReference Include="xunit.runner.visualstudio" />
     <PackageReference Include="Npgsql" />
