@@ -10,7 +10,6 @@ using Akka.Persistence.Journal;
 using Akka.Persistence.Query;
 using Akka.Persistence.Query.Sql;
 using Akka.Persistence.TCK.Query;
-using System.Collections.Immutable;
 using System.Linq;
 using Xunit;
 using Xunit.Abstractions;
