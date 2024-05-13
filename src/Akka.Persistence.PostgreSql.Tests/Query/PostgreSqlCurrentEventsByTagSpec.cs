@@ -17,9 +17,32 @@ using Xunit.Abstractions;
 namespace Akka.Persistence.PostgreSql.Tests.Query
 {
     [Collection("PostgreSqlSpec")]
-    public class PostgreSqlCurrentEventsByTagSpec : CurrentEventsByTagSpec
+    public sealed class PostgreSqlByteACurrentEventsByTagSpec : PostgreSqlCurrentEventsByTagSpec
     {
-        private static Config Initialize(PostgresFixture fixture)
+        public PostgreSqlByteACurrentEventsByTagSpec(ITestOutputHelper output, PostgresFixture fixture) 
+            : base(output, fixture, "bytea")
+        { }
+    }
+
+    [Collection("PostgreSqlSpec")]
+    public sealed class PostgreSqlJsonBCurrentEventsByTagSpec : PostgreSqlCurrentEventsByTagSpec
+    {
+        public PostgreSqlJsonBCurrentEventsByTagSpec(ITestOutputHelper output, PostgresFixture fixture) 
+            : base(output, fixture, "jsonb")
+        { }
+    }
+
+    [Collection("PostgreSqlSpec")]
+    public sealed class PostgreSqlJsonCurrentEventsByTagSpec : PostgreSqlCurrentEventsByTagSpec
+    {
+        public PostgreSqlJsonCurrentEventsByTagSpec(ITestOutputHelper output, PostgresFixture fixture) 
+            : base(output, fixture, "json")
+        { }
+    }
+
+    public abstract class PostgreSqlCurrentEventsByTagSpec : CurrentEventsByTagSpec
+    {
+        private static Config Initialize(PostgresFixture fixture, string storedAs)
         {
             //need to make sure db is created before the tests start
             DbUtils.Initialize(fixture);
@@ -39,6 +62,7 @@ namespace Akka.Persistence.PostgreSql.Tests.Query
                 auto-initialize = on
                 connection-string = ""{DbUtils.ConnectionString}""
                 refresh-interval = 1s
+                stored-as = {storedAs}
             }}
             akka.test.single-expect-default = 10s")
                 .WithFallback(PostgreSqlPersistence.DefaultConfiguration())
@@ -46,8 +70,8 @@ namespace Akka.Persistence.PostgreSql.Tests.Query
                 .WithFallback(Persistence.DefaultConfig());
         }
 
-        public PostgreSqlCurrentEventsByTagSpec(ITestOutputHelper output, PostgresFixture fixture)
-            : base(Initialize(fixture), nameof(PostgreSqlCurrentEventsByTagSpec), output)
+        protected PostgreSqlCurrentEventsByTagSpec(ITestOutputHelper output, PostgresFixture fixture, string storedAs)
+            : base(Initialize(fixture, storedAs), nameof(PostgreSqlCurrentEventsByTagSpec), output)
         {
             ReadJournal = Sys.ReadJournalFor<SqlReadJournal>(SqlReadJournal.Identifier);
         }

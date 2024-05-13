@@ -13,33 +13,57 @@ using Xunit.Abstractions;
 namespace Akka.Persistence.PostgreSql.Tests.Serialization
 {
     [Collection("PostgreSqlSpec")]
-    public class PostgreSqlSnapshotStoreSerializationSpec : SnapshotStoreSerializationSpec
+    public abstract class PostgreSqlByteASnapshotStoreSerializationSpec : PostgreSqlSnapshotStoreSerializationSpec
     {
-        public PostgreSqlSnapshotStoreSerializationSpec(ITestOutputHelper output, PostgresFixture fixture)
-            : base(CreateSpecConfig(fixture), "PostgreSqlSnapshotStoreSerializationSpec", output)
+        protected PostgreSqlByteASnapshotStoreSerializationSpec(ITestOutputHelper output, PostgresFixture fixture)
+            : base(output, fixture, "bytea")
+        { }
+    }
+    
+    [Collection("PostgreSqlSpec")]
+    public abstract class PostgreSqlJsonBSnapshotStoreSerializationSpec : PostgreSqlSnapshotStoreSerializationSpec
+    {
+        protected PostgreSqlJsonBSnapshotStoreSerializationSpec(ITestOutputHelper output, PostgresFixture fixture)
+            : base(output, fixture, "jsonb")
+        { }
+    }
+    
+    [Collection("PostgreSqlSpec")]
+    public abstract class PostgreSqlJsonSnapshotStoreSerializationSpec : PostgreSqlSnapshotStoreSerializationSpec
+    {
+        protected PostgreSqlJsonSnapshotStoreSerializationSpec(ITestOutputHelper output, PostgresFixture fixture)
+            : base(output, fixture, "json")
+        { }
+    }
+    
+    public abstract class PostgreSqlSnapshotStoreSerializationSpec : SnapshotStoreSerializationSpec
+    {
+        protected PostgreSqlSnapshotStoreSerializationSpec(ITestOutputHelper output, PostgresFixture fixture, string storedAs)
+            : base(CreateSpecConfig(fixture, storedAs), "PostgreSqlSnapshotStoreSerializationSpec", output)
         {
         }
 
-        private static Config CreateSpecConfig(PostgresFixture fixture)
+        private static Config CreateSpecConfig(PostgresFixture fixture, string storedAs)
         {
             //need to make sure db is created before the tests start
             DbUtils.Initialize(fixture);
 
-            return ConfigurationFactory.ParseString(@"
-                akka.persistence {
+            return ConfigurationFactory.ParseString($@"
+                akka.persistence {{
                     publish-plugin-commands = on
-                    journal {
+                    journal {{
                         plugin = ""akka.persistence.journal.postgresql""
-                        postgresql {
+                        postgresql {{
                             class = ""Akka.Persistence.PostgreSql.Journal.PostgreSqlJournal, Akka.Persistence.PostgreSql""
                             plugin-dispatcher = ""akka.actor.default-dispatcher""
                             table-name = event_journal
                             schema-name = public
                             auto-initialize = on
-                            connection-string = """ + DbUtils.ConnectionString + @"""
-                        }
-                    }
-                }
+                            connection-string = ""{DbUtils.ConnectionString}""
+                            stored-as = {storedAs}
+                        }}
+                    }}
+                }}
                 akka.test.single-expect-default = 10s");
         }
     }

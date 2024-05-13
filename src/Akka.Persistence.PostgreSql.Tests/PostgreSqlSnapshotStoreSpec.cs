@@ -14,35 +14,67 @@ using Xunit.Abstractions;
 namespace Akka.Persistence.PostgreSql.Tests
 {
     [Collection("PostgreSqlSpec")]
-    public class PostgreSqlSnapshotStoreSpec : SnapshotStoreSpec
+    public sealed class PostgreSqlByteASnapshotStoreSpec : PostgreSqlSnapshotStoreSpec
     {
-        private static Config Initialize(PostgresFixture fixture)
+        public PostgreSqlByteASnapshotStoreSpec(ITestOutputHelper output, PostgresFixture fixture) 
+            : base(output, fixture, "bytea")
+        { }
+    }
+    
+    [Collection("PostgreSqlSpec")]
+    public sealed class PostgreSqlJsonBSnapshotStoreSpec : PostgreSqlSnapshotStoreSpec
+    {
+        public PostgreSqlJsonBSnapshotStoreSpec(ITestOutputHelper output, PostgresFixture fixture) 
+            : base(output, fixture, "jsonb")
+        { }
+        
+        [Fact(Skip = "Akka.Persistence.PostgreSql in JsonB mode does not support ISurrogate serialization")]
+        public override void ShouldSerializeSnapshots()
+        { }
+    }
+    
+    [Collection("PostgreSqlSpec")]
+    public sealed class PostgreSqlJsonSnapshotStoreSpec : PostgreSqlSnapshotStoreSpec
+    {
+        public PostgreSqlJsonSnapshotStoreSpec(ITestOutputHelper output, PostgresFixture fixture) 
+            : base(output, fixture, "json")
+        { }
+        
+        [Fact(Skip = "Akka.Persistence.PostgreSql in Json mode does not support ISurrogate serialization")]
+        public override void ShouldSerializeSnapshots()
+        { }
+    }
+    
+    public abstract class PostgreSqlSnapshotStoreSpec : SnapshotStoreSpec
+    {
+        private static Config Initialize(PostgresFixture fixture, string storedAs)
         {
             //need to make sure db is created before the tests start
             DbUtils.Initialize(fixture);
 
-            var config = @"
-                akka.persistence {
+            var config = @$"
+                akka.persistence {{
                     publish-plugin-commands = on
-                    snapshot-store {
+                    snapshot-store {{
                         plugin = ""akka.persistence.snapshot-store.postgresql""
-                        postgresql {
+                        postgresql {{
                             class = ""Akka.Persistence.PostgreSql.Snapshot.PostgreSqlSnapshotStore, Akka.Persistence.PostgreSql""
                             plugin-dispatcher = ""akka.actor.default-dispatcher""
                             table-name = snapshot_store
                             schema-name = public
                             auto-initialize = on
-                            connection-string = """ + DbUtils.ConnectionString + @"""
-                        }
-                    }
-                }
+                            connection-string = ""{DbUtils.ConnectionString}""
+                            stored-as = {storedAs}
+                        }}
+                    }}
+                }}
                 akka.test.single-expect-default = 10s";
 
             return ConfigurationFactory.ParseString(config);
         }
 
-        public PostgreSqlSnapshotStoreSpec(ITestOutputHelper output, PostgresFixture fixture)
-            : base(Initialize(fixture), "PostgreSqlSnapshotStoreSpec", output: output)
+        protected PostgreSqlSnapshotStoreSpec(ITestOutputHelper output, PostgresFixture fixture, string storedAs)
+            : base(Initialize(fixture, storedAs), "PostgreSqlSnapshotStoreSpec", output: output)
         {
             Initialize();
         }

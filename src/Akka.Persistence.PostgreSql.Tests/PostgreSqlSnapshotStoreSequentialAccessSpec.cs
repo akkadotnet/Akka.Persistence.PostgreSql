@@ -5,7 +5,9 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
+using System;
 using Akka.Configuration;
+using Akka.Persistence.TCK.Serialization;
 using Akka.Persistence.TCK.Snapshot;
 using Akka.TestKit;
 using Xunit;
@@ -14,36 +16,68 @@ using Xunit.Abstractions;
 namespace Akka.Persistence.PostgreSql.Tests
 {
     [Collection("PostgreSqlSpec")]
-    public class PostgreSqlSnapshotStoreSequentialAccessSpec : SnapshotStoreSpec
+    public sealed class PostgreSqlByteASnapshotStoreSequentialAccessSpec : PostgreSqlSnapshotStoreSequentialAccessSpec
     {
-        private static Config Initialize(PostgresFixture fixture)
+        public PostgreSqlByteASnapshotStoreSequentialAccessSpec(ITestOutputHelper output, PostgresFixture fixture) 
+            : base(output, fixture, "bytea")
+        { }
+    }
+    
+    [Collection("PostgreSqlSpec")]
+    public sealed class PostgreSqlJsonBSnapshotStoreSequentialAccessSpec : PostgreSqlSnapshotStoreSequentialAccessSpec
+    {
+        public PostgreSqlJsonBSnapshotStoreSequentialAccessSpec(ITestOutputHelper output, PostgresFixture fixture) 
+            : base(output, fixture, "jsonb")
+        { }
+        
+        [Fact(Skip = "Akka.Persistence.PostgreSql in JsonB mode does not support ISurrogate serialization")]
+        public override void ShouldSerializeSnapshots()
+        { }
+    }
+    
+    [Collection("PostgreSqlSpec")]
+    public sealed class PostgreSqlJsonSnapshotStoreSequentialAccessSpec : PostgreSqlSnapshotStoreSequentialAccessSpec
+    {
+        public PostgreSqlJsonSnapshotStoreSequentialAccessSpec(ITestOutputHelper output, PostgresFixture fixture) 
+            : base(output, fixture, "json")
+        { }
+        
+        [Fact(Skip = "Akka.Persistence.PostgreSql in Json mode does not support ISurrogate serialization")]
+        public override void ShouldSerializeSnapshots()
+        { }
+    }
+    
+    public abstract class PostgreSqlSnapshotStoreSequentialAccessSpec : SnapshotStoreSpec
+    {
+        private static Config Initialize(PostgresFixture fixture, string storedAs)
         {
             //need to make sure db is created before the tests start
             DbUtils.Initialize(fixture);
 
-            var config = @"
-                akka.persistence {
+            var config = $@"
+                akka.persistence {{
                     publish-plugin-commands = on
-                    snapshot-store {
+                    snapshot-store {{
                         plugin = ""akka.persistence.snapshot-store.postgresql""
-                        postgresql {
+                        postgresql {{
                             class = ""Akka.Persistence.PostgreSql.Snapshot.PostgreSqlSnapshotStore, Akka.Persistence.PostgreSql""
                             plugin-dispatcher = ""akka.actor.default-dispatcher""
                             table-name = snapshot_store
                             schema-name = public
                             auto-initialize = on
-                            connection-string = """ + DbUtils.ConnectionString + @"""
+                            connection-string = ""{DbUtils.ConnectionString}""
                             sequential-access = on
-                        }
-                    }
-                }
+                            stored-as = {storedAs}
+                        }}
+                    }}
+                }}
                 akka.test.single-expect-default = 10s";
 
             return ConfigurationFactory.ParseString(config);
         }
 
-        public PostgreSqlSnapshotStoreSequentialAccessSpec(ITestOutputHelper output, PostgresFixture fixture)
-            : base(Initialize(fixture), "PostgreSqlSnapshotStoreSpec", output: output)
+        protected PostgreSqlSnapshotStoreSequentialAccessSpec(ITestOutputHelper output, PostgresFixture fixture, string storedAs)
+            : base(Initialize(fixture, storedAs), "PostgreSqlSnapshotStoreSpec", output: output)
         {
             Initialize();
         }
@@ -68,5 +102,9 @@ namespace Akka.Persistence.PostgreSql.Tests
             Assert.Equal(md.SequenceNr, result.Snapshot.Metadata.SequenceNr);
             // metadata timestamp may have been changed
         }
+        
+        [Fact(Skip = "Akka.Persistence.PostgreSql in JsonB mode does not support ISurrogate serialization")]
+        public override void ShouldSerializeSnapshots()
+        { }
     }
 }

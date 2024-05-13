@@ -20,29 +20,53 @@ using Xunit.Abstractions;
 namespace Akka.Persistence.PostgreSql.Tests
 {
     [Collection("PostgreSqlSpec")]
-    public class PostgreSqlJournalBigIntSpec : JournalSpec
+    public sealed class PostgreSqlByteAJournalBigIntSpec : PostgreSqlJournalBigIntSpec
     {
-        private static Config Initialize(PostgresFixture fixture) 
+        public PostgreSqlByteAJournalBigIntSpec(ITestOutputHelper output, PostgresFixture fixture) 
+            : base(output, fixture, "bytea")
+        { }
+    }
+    
+    [Collection("PostgreSqlSpec")]
+    public sealed class PostgreSqlJsonBJournalBigIntSpec : PostgreSqlJournalBigIntSpec
+    {
+        public PostgreSqlJsonBJournalBigIntSpec(ITestOutputHelper output, PostgresFixture fixture) 
+            : base(output, fixture, "jsonb")
+        { }
+    }
+    
+    [Collection("PostgreSqlSpec")]
+    public sealed class PostgreSqlJsonJournalBigIntSpec : PostgreSqlJournalBigIntSpec
+    {
+        public PostgreSqlJsonJournalBigIntSpec(ITestOutputHelper output, PostgresFixture fixture) 
+            : base(output, fixture, "json")
+        { }
+    }
+    
+    public abstract class PostgreSqlJournalBigIntSpec : JournalSpec
+    {
+        private static Config Initialize(PostgresFixture fixture, string storedAs)
         {
             //need to make sure db is created before the tests start
             DbUtils.Initialize(fixture);
 
-            var config = @"
-                akka.persistence {
+            var config = $@"
+                akka.persistence {{
                     publish-plugin-commands = on
-                    journal {
+                    journal {{
                         plugin = ""akka.persistence.journal.postgresql""
-                        postgresql {
+                        postgresql {{
                             class = ""Akka.Persistence.PostgreSql.Journal.PostgreSqlJournal, Akka.Persistence.PostgreSql""
                             plugin-dispatcher = ""akka.actor.default-dispatcher""
                             table-name = event_journal
                             schema-name = public
                             auto-initialize = on
-                            connection-string = """ + DbUtils.ConnectionString + @"""
+                            connection-string = ""{DbUtils.ConnectionString}""
                             use-bigint-identity-for-ordering-column = on
-                        }
-                    }
-                }
+                            stored-as = {storedAs}
+                        }}
+                    }}
+                }}
                 akka.test.single-expect-default = 10s";
 
             return ConfigurationFactory.ParseString(config);
@@ -51,8 +75,8 @@ namespace Akka.Persistence.PostgreSql.Tests
         // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
         protected override bool SupportsSerialization => false;
 
-        public PostgreSqlJournalBigIntSpec(ITestOutputHelper output, PostgresFixture fixture)
-            : base(Initialize(fixture), "PostgreSqlJournalBigIntSpec", output)
+        protected PostgreSqlJournalBigIntSpec(ITestOutputHelper output, PostgresFixture fixture, string storedAs)
+            : base(Initialize(fixture, storedAs), "PostgreSqlJournalBigIntSpec", output)
         {
             Initialize();
         }

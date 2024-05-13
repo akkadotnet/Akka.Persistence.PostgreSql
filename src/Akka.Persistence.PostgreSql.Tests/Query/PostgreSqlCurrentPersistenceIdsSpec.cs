@@ -15,9 +15,35 @@ using Xunit.Abstractions;
 namespace Akka.Persistence.PostgreSql.Tests.Query
 {
     [Collection("PostgreSqlSpec")]
-    public class PostgreSqlCurrentPersistenceIdsSpec : CurrentPersistenceIdsSpec
+    public sealed class PostgreSqlByteACurrentPersistenceIdsSpec : PostgreSqlCurrentPersistenceIdsSpec
     {
-        private static Config Initialize(PostgresFixture fixture)
+        public PostgreSqlByteACurrentPersistenceIdsSpec(ITestOutputHelper output, PostgresFixture fixture) 
+            : base(output, fixture, "bytea")
+        {
+        }
+    }
+    
+    [Collection("PostgreSqlSpec")]
+    public sealed class PostgreSqlJsonBCurrentPersistenceIdsSpec : PostgreSqlCurrentPersistenceIdsSpec
+    {
+        public PostgreSqlJsonBCurrentPersistenceIdsSpec(ITestOutputHelper output, PostgresFixture fixture) 
+            : base(output, fixture, "jsonb")
+        {
+        }
+    }
+    
+    [Collection("PostgreSqlSpec")]
+    public sealed class PostgreSqlJsonCurrentPersistenceIdsSpec : PostgreSqlCurrentPersistenceIdsSpec
+    {
+        public PostgreSqlJsonCurrentPersistenceIdsSpec(ITestOutputHelper output, PostgresFixture fixture) 
+            : base(output, fixture, "json")
+        {
+        }
+    }
+    
+    public abstract class PostgreSqlCurrentPersistenceIdsSpec : CurrentPersistenceIdsSpec
+    {
+        private static Config Initialize(PostgresFixture fixture, string storedAs)
         {
             //need to make sure db is created before the tests start
             DbUtils.Initialize(fixture);
@@ -31,6 +57,7 @@ namespace Akka.Persistence.PostgreSql.Tests.Query
                 auto-initialize = on
                 connection-string = ""{DbUtils.ConnectionString}""
                 refresh-interval = 1s
+                stored-as = {storedAs}
             }}
             akka.test.single-expect-default = 10s")
                 .WithFallback(PostgreSqlPersistence.DefaultConfiguration())
@@ -38,8 +65,8 @@ namespace Akka.Persistence.PostgreSql.Tests.Query
                 .WithFallback(Persistence.DefaultConfig());
         }
 
-        public PostgreSqlCurrentPersistenceIdsSpec(ITestOutputHelper output, PostgresFixture fixture) 
-            : base(Initialize(fixture), nameof(PostgreSqlCurrentPersistenceIdsSpec), output)
+        protected PostgreSqlCurrentPersistenceIdsSpec(ITestOutputHelper output, PostgresFixture fixture, string storedAs)
+            : base(Initialize(fixture, storedAs), nameof(PostgreSqlCurrentPersistenceIdsSpec), output)
         {
             ReadJournal = Sys.ReadJournalFor<SqlReadJournal>(SqlReadJournal.Identifier);
         }

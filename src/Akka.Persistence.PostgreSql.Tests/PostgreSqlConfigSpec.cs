@@ -13,6 +13,7 @@ using Akka.Persistence.PostgreSql.Journal;
 using Akka.Persistence.PostgreSql.Snapshot;
 using Akka.Persistence.Sql.Common.Extensions;
 using Akka.Persistence.Sql.Common.Journal;
+using Akka.Serialization;
 using FluentAssertions;
 using FluentAssertions.Extensions;
 using Xunit;

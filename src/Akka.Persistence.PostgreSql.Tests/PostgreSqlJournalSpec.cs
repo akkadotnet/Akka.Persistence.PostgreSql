@@ -20,28 +20,55 @@ using Xunit.Abstractions;
 namespace Akka.Persistence.PostgreSql.Tests
 {
     [Collection("PostgreSqlSpec")]
-    public class PostgreSqlJournalSpec : JournalSpec
+    public sealed class PostgreSqlByteAJournalSpec : PostgreSqlJournalSpec
     {
-        private static Config Initialize(PostgresFixture fixture) 
+        public PostgreSqlByteAJournalSpec(ITestOutputHelper output, PostgresFixture fixture) 
+            : base(output, fixture, "bytea")
+        {
+        }
+    }
+
+    [Collection("PostgreSqlSpec")]
+    public sealed class PostgreSqlJsonBJournalSpec : PostgreSqlJournalSpec
+    {
+        public PostgreSqlJsonBJournalSpec(ITestOutputHelper output, PostgresFixture fixture) 
+            : base(output, fixture, "jsonb")
+        {
+        }
+    }
+
+    [Collection("PostgreSqlSpec")]
+    public sealed class PostgreSqlJsonJournalSpec : PostgreSqlJournalSpec
+    {
+        public PostgreSqlJsonJournalSpec(ITestOutputHelper output, PostgresFixture fixture) 
+            : base(output, fixture, "json")
+        {
+        }
+    }
+
+    public abstract class PostgreSqlJournalSpec : JournalSpec
+    {
+        private static Config Initialize(PostgresFixture fixture, string storedAs)
         {
             //need to make sure db is created before the tests start
             DbUtils.Initialize(fixture);
 
-            var config = @"
-                akka.persistence {
+            var config = @$"
+                akka.persistence {{
                     publish-plugin-commands = on
-                    journal {
+                    journal {{
                         plugin = ""akka.persistence.journal.postgresql""
-                        postgresql {
+                        postgresql {{
                             class = ""Akka.Persistence.PostgreSql.Journal.PostgreSqlJournal, Akka.Persistence.PostgreSql""
                             plugin-dispatcher = ""akka.actor.default-dispatcher""
                             table-name = event_journal
                             schema-name = public
                             auto-initialize = on
-                            connection-string = """ + DbUtils.ConnectionString + @"""
-                        }
-                    }
-                }
+                            connection-string = ""{DbUtils.ConnectionString}""
+                            stored-as = {storedAs}
+                        }}
+                    }}
+                }}
                 akka.test.single-expect-default = 10s";
 
             return ConfigurationFactory.ParseString(config);
@@ -50,8 +77,8 @@ namespace Akka.Persistence.PostgreSql.Tests
         // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
         protected override bool SupportsSerialization => false;
 
-        public PostgreSqlJournalSpec(ITestOutputHelper output, PostgresFixture fixture)
-            : base(Initialize(fixture), "PostgreSqlJournalSpec", output: output)
+        protected PostgreSqlJournalSpec(ITestOutputHelper output, PostgresFixture fixture, string storedAs)
+            : base(Initialize(fixture, storedAs), "PostgreSqlJournalSpec", output: output)
         {
             Initialize();
         }

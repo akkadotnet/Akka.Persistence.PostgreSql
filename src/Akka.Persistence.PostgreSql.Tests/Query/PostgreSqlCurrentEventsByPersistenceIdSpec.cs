@@ -15,9 +15,32 @@ using Xunit.Abstractions;
 namespace Akka.Persistence.PostgreSql.Tests.Query
 {
     [Collection("PostgreSqlSpec")]
-    public class PostgreSqlCurrentEventsByPersistenceIdSpec : CurrentEventsByPersistenceIdSpec
+    public sealed class PostgreSqlByteACurrentEventsByPersistenceIdSpec : PostgreSqlCurrentEventsByPersistenceIdSpec
     {
-        private static Config Initialize(PostgresFixture fixture)
+        public PostgreSqlByteACurrentEventsByPersistenceIdSpec(ITestOutputHelper output, PostgresFixture fixture) 
+            : base(output, fixture, "bytea")
+        { }
+    }
+    
+    [Collection("PostgreSqlSpec")]
+    public sealed class PostgreSqlJsonBCurrentEventsByPersistenceIdSpec : PostgreSqlCurrentEventsByPersistenceIdSpec
+    {
+        public PostgreSqlJsonBCurrentEventsByPersistenceIdSpec(ITestOutputHelper output, PostgresFixture fixture) 
+            : base(output, fixture, "jsonb")
+        { }
+    }
+    
+    [Collection("PostgreSqlSpec")]
+    public sealed class PostgreSqlJsonCurrentEventsByPersistenceIdSpec : PostgreSqlCurrentEventsByPersistenceIdSpec
+    {
+        public PostgreSqlJsonCurrentEventsByPersistenceIdSpec(ITestOutputHelper output, PostgresFixture fixture) 
+            : base(output, fixture, "json")
+        { }
+    }
+    
+    public abstract class PostgreSqlCurrentEventsByPersistenceIdSpec : CurrentEventsByPersistenceIdSpec
+    {
+        private static Config Initialize(PostgresFixture fixture, string storedAs)
         {
             //need to make sure db is created before the tests start
             DbUtils.Initialize(fixture);
@@ -31,6 +54,7 @@ namespace Akka.Persistence.PostgreSql.Tests.Query
                 auto-initialize = on
                 connection-string = ""{DbUtils.ConnectionString}""
                 refresh-interval = 1s
+                stored-as = {storedAs}
             }}
             akka.test.single-expect-default = 10s")
                 .WithFallback(PostgreSqlPersistence.DefaultConfiguration())
@@ -38,8 +62,8 @@ namespace Akka.Persistence.PostgreSql.Tests.Query
                 .WithFallback(Persistence.DefaultConfig());
         }
 
-        public PostgreSqlCurrentEventsByPersistenceIdSpec(ITestOutputHelper output, PostgresFixture fixture)
-            : base(Initialize(fixture), nameof(PostgreSqlCurrentEventsByPersistenceIdSpec), output)
+        protected PostgreSqlCurrentEventsByPersistenceIdSpec(ITestOutputHelper output, PostgresFixture fixture, string storedAs)
+            : base(Initialize(fixture, storedAs), nameof(PostgreSqlCurrentEventsByPersistenceIdSpec), output)
         {
             ReadJournal = Sys.ReadJournalFor<SqlReadJournal>(SqlReadJournal.Identifier);
         }
