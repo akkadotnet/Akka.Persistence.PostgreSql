@@ -4,8 +4,8 @@
     <AkkaVersion>1.5.20</AkkaVersion>
     <AkkaHostingVersion>1.5.20</AkkaHostingVersion>
 
-    <!-- Install from version 8.0.3 included all the way up to 9.x.x, but don't go up a major version -->
-    <PostgresLowVersion>8.0.3</PostgresLowVersion>
+    <!-- Install from version 5.0.18 included all the way up to 9.x.x, but don't go up a major version -->
+    <PostgresLowVersion>5.0.18</PostgresLowVersion>
     <PostgresHighVersion>9</PostgresHighVersion>
     <PostgresVersion>[$(PostgresLowVersion), $(PostgresHighVersion)]</PostgresVersion>
   </PropertyGroup>
