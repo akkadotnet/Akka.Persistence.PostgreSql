@@ -1,3 +1,9 @@
+### 1.5.18 September 11th 2024 ###
+
+* [Update Akka.NET to v1.5.28](https://github.com/akkadotnet/akka.net/releases/tag/1.5.28)
+* [Update Akka.Hosting to 1.5.28](https://github.com/akkadotnet/Akka.Hosting/releases/tag/1.5.28)
+* [Rollback Npgsql minimum version to v5.0.18](https://github.com/akkadotnet/Akka.Persistence.PostgreSql/pull/269)
+
 ### 1.5.20 May 11th 2024 ###
 
 * [Update Akka.NET to v1.5.20](https://github.com/akkadotnet/akka.net/releases/tag/1.5.20)
