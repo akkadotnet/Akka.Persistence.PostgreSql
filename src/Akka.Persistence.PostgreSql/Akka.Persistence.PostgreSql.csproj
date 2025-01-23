@@ -2,7 +2,7 @@
   <PropertyGroup>
     <AssemblyTitle>Akka.Persistence.PostgreSql</AssemblyTitle>
     <Description>Akka Persistence journal and snapshot store backed by PostgreSql database.</Description>
-    <TargetFramework>$(NetStandardLibVersion)</TargetFramework>
+    <TargetFrameworks>$(NetStandardLibVersion);$(NetLibVersion)</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <LangVersion>11</LangVersion>
     <PackageIcon>icon.png</PackageIcon>
